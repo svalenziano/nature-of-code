@@ -11,13 +11,24 @@ function draw() {
     flowers.push(createFlower());
   }
 
-  for (let i = 0; i < flowers.length; i++) {
-    let f = flowers[i];
-    fill(f.color);
-    ellipse(f.x, f.y, f.size);
-  }
+  drawFlowers(flowers);
+  
 }
 
+function drawFlowers(flowersArr) {
+  for (let i = 0; i < flowersArr.length; i++) {
+    let f = flowersArr[i];
+    // Petals
+    stroke(0,0,0,0)
+    fill(f.color);
+    ellipse(f.x, f.y, f.size,     f.size / 2)
+    ellipse(f.x, f.y, f.size / 2, f.size)
+    
+    // Yellow center 
+    fill("yellow");
+    ellipse(f.x, f.y, f.size / 2);
+  }
+}
 
 function createFlower() {
   let flower = {
