@@ -6,10 +6,16 @@ function setup() {
 function draw() {
   background("lightblue");
 
-  let myFlower = createFlower();
-  
-  fill(myFlower.color);
-  ellipse(myFlower.x, myFlower.y, myFlower.size);
+  let flowers = [];
+  for (let i = 0; i < 100; i++) {
+    flowers.push(createFlower());
+  }
+
+  for (let i = 0; i < flowers.length; i++) {
+    let f = flowers[i];
+    fill(f.color);
+    ellipse(f.x, f.y, f.size);
+  }
 }
 
 
