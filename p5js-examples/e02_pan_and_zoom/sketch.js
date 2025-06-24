@@ -1,12 +1,22 @@
 "use strict";
 
+// -- Button class ---------------------------------------------------
+// created by SV from scratch
+
+
+
 // -- Camera class ---------------------------------------------------
+// Created with GPT and modified by SV
 class Camera {
   constructor(minScale, maxScale) {
-    this.pos = createVector(0, 0);   // camera center in world coords
-    this.scale = 1;                  // zoom level
+    this.reset();
     this.minScale = minScale;
     this.maxScale = maxScale;
+  }
+
+  reset() {
+    this.pos = createVector(0, 0);   // camera center in world coords
+    this.scale = 1;
   }
 
   // Call before drawing your world
@@ -70,6 +80,7 @@ function setup() {
 // -- p5.js draw() --------------------------------------------------
 function draw() {
   background(240);
+  keyboardInputs();
 
   // Start camera transform
   cam.begin();
@@ -104,7 +115,7 @@ function draw() {
   // Draw instructions in screen-space
   fill(0);
   textSize(14);
-  text("👉 Drag to pan; Scroll to zoom", 10, height - 10);
+  text("👉 Drag to pan; Scroll to zoom, ESC to reset.", 10, height - 10);
 }
 
 // -- Mouse & Touch Events ------------------------------------------
@@ -138,4 +149,12 @@ function mouseWheel(event) {
   cam.zoomAt(zoomFactor, mouseX, mouseY);
   // prevent default mousewheel actions
   return false;
+}
+
+function keyboardInputs() {
+  if (keyIsPressed === true) {
+    if (keyCode === ESCAPE) {
+      cam.reset();
+    }
+  }
 }
