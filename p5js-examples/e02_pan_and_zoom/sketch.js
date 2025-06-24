@@ -41,7 +41,7 @@ class Camera {
     let wyBefore = (py - height/2) / this.scale + this.pos.y;
 
     // Apply zoom
-    this.scale *= factor;
+    this.scale = constrain(this.scale * factor, this.minScale, this.maxScale);
 
     // Convert screen point to world coords AFTER zoom
     let wxAfter = (px - width/2) / this.scale + this.pos.x;
@@ -61,7 +61,7 @@ let prevMouseX, prevMouseY;
 // -- p5.js setup() -------------------------------------------------
 function setup() {
   createCanvas(800, 600);
-  cam = new Camera();
+  cam = new Camera(0.25, 10);
 
   // Optional: smooth drawing
   smooth();
@@ -77,11 +77,11 @@ function draw() {
   // ALL OF YOUR CAMERA-DRAWN ELEMENTS GO HERE
     // Draw a simple grid
     stroke(200);
-    for (let x = -2000; x <= 2000; x += 50) {
-      line(x, -2000, x, 2000);
+    for (let x = width * -1; x <= width; x += 50) {
+      line(x, -1 * height, x, height);
     }
-    for (let y = -2000; y <= 2000; y += 50) {
-      line(-2000, y, 2000, y);
+    for (let y = -1 * height; y <= height; y += 50) {
+      line(-1 * width, y, width, y);
     }
 
     // Draw axes
