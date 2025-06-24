@@ -48,13 +48,7 @@ class Button {
 
 class ButtonArray {
   /* 
-  STATIC FIELDS
-    - 
-  PROPS
-  - 
-  METHODS
-  - constructor:
-    - creates array of 
+
   */
 }
 
