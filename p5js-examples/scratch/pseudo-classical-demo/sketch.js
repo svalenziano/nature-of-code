@@ -1,4 +1,4 @@
-// SYNOPSIS: Practice pre-ES6 syntax 
+// GOAL: Practice pre-ES6 syntax 
 
 // ----------------------------------------------------------
 // ORCHESTRATOR 'CLASS'
@@ -27,6 +27,9 @@ Orchestrator.prototype.drawAll = function() {
 let shapeProto = {
   move() {
     this.pos.add(this.vector);
+    if (this.isOffScreen()) {
+      this.moveToCenter();
+    }
     // this.checkFrame(width, height);
   },
   drawPrep() {
@@ -34,6 +37,22 @@ let shapeProto = {
     strokeWeight(this.strokeWeight);
     fill(this.color)
   },
+  isOffScreen() {
+    let s = this.getSize();
+    return (
+      this.pos.x < 0 - s||
+      this.pos.x > width + s||
+      this.pos.y < 0 - s||
+      this.pos.y > height + s
+    )
+  },
+  moveToCenter() {
+    this.pos.x = width / 2;
+    this.pos.y = width / 2;
+  },
+  getSize() {
+    return this.diameter ?? this.size ?? this.width ?? 20;
+  }
   // draw() {
   //   this.drawPrep();
   // circle(this.pos.x, this.pos.y, 10);
@@ -44,9 +63,10 @@ let shapeProto = {
 function Shape() {
   this.pos = createVector(random(0, width), random(0, height))
   this.rotation = random(0, 360);  // degrees
-  this.vector = createVector(random(-1, 1), random(-1, 0.1));
+  this.vector = createVector(random(-1, 1), random(-1, 1));
   this.color = color(random(0, 360), 90, 60, 50);
   this.strokeWeight = 0.5;
+  this.moveToCenter();
   Shape.instances.push(this);
 }
 
@@ -93,6 +113,13 @@ Circle.prototype.draw = function() {
   circle(this.pos.x, this.pos.y, this.diameter);
 }
 
+// ----------------------------------------------------------
+// SQUARE 'CLASS'
+function Square(size) {
+  Shape.call(this);
+  this.size = size;
+}
+
 
 // ----------------------------------------------------------
 // Create objects
@@ -105,8 +132,8 @@ const shapes = new Orchestrator();
 function setup() {
   colorMode(HSL)
   createCanvas(400, 400);
-  frameRate(15);
-  shapes.createShapes();
+  frameRate(30);
+  shapes.createShapes(200);
   console.log("SETUP IS COMPLETE")
 }
 
