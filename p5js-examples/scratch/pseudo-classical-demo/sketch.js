@@ -1,6 +1,28 @@
 // SYNOPSIS: Practice pre-ES6 syntax 
 
 // ----------------------------------------------------------
+// ORCHESTRATOR 'CLASS'
+  // This class orchestrates the creation and display of other 
+  // class instances
+function Orchestrator() {
+  this.instances = [];
+}
+
+// "Instance methods"
+Orchestrator.prototype.createShapes = function(qty=100) {
+  for (let i = 0; i < qty; i++) {
+    this.instances.push(new Circle(random(2, 20)));
+  }
+}
+
+Orchestrator.prototype.drawAll = function() {
+  for (let i of this.instances) {
+    i.draw();
+    i.move();
+  }
+}
+
+// ----------------------------------------------------------
 // SHAPE 'CLASS'
 let shapeProto = {
   move() {
@@ -22,7 +44,7 @@ let shapeProto = {
 function Shape() {
   this.pos = createVector(random(0, width), random(0, height))
   this.rotation = random(0, 360);  // degrees
-  this.vector = createVector(random(0, 1), random(0, 1));
+  this.vector = createVector(random(-1, 1), random(-1, 0.1));
   this.color = color(random(0, 360), 90, 60, 50);
   this.strokeWeight = 0.5;
   Shape.instances.push(this);
@@ -53,7 +75,6 @@ Shape.drawAll = function() {
 }
 
 
-
 // ----------------------------------------------------------
 // CIRCLE 'CLASS'
 function Circle(diameter) {
@@ -69,27 +90,28 @@ Circle.prototype = circleProto;
 Circle.instances = [];  // Circle has its own instances
 Circle.prototype.draw = function() {
   this.drawPrep();
-  circle(this.pos.x, this.pos.y, 10);
+  circle(this.pos.x, this.pos.y, this.diameter);
 }
 
 
 // ----------------------------------------------------------
 // Create objects
-
-let obj;
+const LIGHT_BLUE = [218, 85, 2]
+const LIGHT_GRAY = [0, 0, 95]
+const shapes = new Orchestrator();
 
 // ----------------------------------------------------------
 // Main Loop
 function setup() {
   colorMode(HSL)
   createCanvas(400, 400);
-  frameRate(1);
+  frameRate(15);
+  shapes.createShapes();
   console.log("SETUP IS COMPLETE")
 }
 
 function draw() {
-  background(0, 0, 95);
-  Circle.nukeInstances();
-  Circle.populateInstances();
-  Circle.drawAll();
+  background('rgb(196, 229, 241)');
+  // background(...LIGHT_BLUE);
+  shapes.drawAll();
 }
