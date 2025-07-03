@@ -16,9 +16,14 @@ Orchestrator.prototype.createShapes = function(qty=100) {
 }
 
 Orchestrator.prototype.drawAll = function() {
-  for (let i of this.instances) {
-    i.draw();
-    i.move();
+  for (let i = 0; i < this.instances.length; i++) {
+    let shape = this.instances[i];
+    if (shape.isOffScreen()) {
+      shape.moveToCenter();
+      // this.instances.unshift(this.instances.splice(i, 1));  // draw shape behind others
+    }
+    shape.draw();
+    shape.move();
   }
 }
 
@@ -27,9 +32,10 @@ Orchestrator.prototype.drawAll = function() {
 let shapeProto = {
   move() {
     this.pos.add(this.vector);
-    if (this.isOffScreen()) {
-      this.moveToCenter();
-    }
+    // if (this.isOffScreen()) {
+    //   // TODO: move to bottom of stack so that it appears "behind" other shapes
+    //   this.moveToCenter();
+    // }
     // this.checkFrame(width, height);
   },
   drawPrep() {
@@ -119,6 +125,8 @@ function Square(size) {
   Shape.call(this);
   this.size = size;
 }
+
+
 
 
 // ----------------------------------------------------------
