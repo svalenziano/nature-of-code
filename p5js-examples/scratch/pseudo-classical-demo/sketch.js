@@ -1,44 +1,48 @@
 // SYNOPSIS: Practice pre-ES6 syntax 
 
+// ----------------------------------------------------------
+// SHAPE 'CLASS'
 let shapeProto = {
   move() {
     this.pos.add(this.vector);
     // this.checkFrame(width, height);
   },
-  draw() {
+  drawPrep() {
+    // should be called before drawing any object
     strokeWeight(this.strokeWeight);
     fill(this.color)
-    circle(this.pos.x, this.pos.y, 10);
-  }
+  },
+  // draw() {
+  //   this.drawPrep();
+  // circle(this.pos.x, this.pos.y, 10);
+  // }
 }
 
 // Constructor
 function Shape() {
-  // position
   this.pos = createVector(random(0, width), random(0, height))
   this.rotation = random(0, 360);  // degrees
   this.vector = createVector(random(0, 1), random(0, 1));
-  // colors
-  this.color = color(random(0, 360), 90, 60, 50)
-  // this.fillH = random(0, 360);  // hue
-  // this.fillS = 90;              // saturation
-  // this.fillL = 60;              // luminance
-  // this.alpha = 50;              // transparency
-  // sizes
+  this.color = color(random(0, 360), 90, 60, 50);
   this.strokeWeight = 0.5;
   Shape.instances.push(this);
 }
 
+// Set prototype and repair .constructor
+Shape.prototype = shapeProto;
+shapeProto.constructor = Shape;
+
 // "Static properties"
 Shape.instances = [];
 
-Shape.resetInstances = function() {
+// "Static methods"
+Shape.nukeInstances = function() {
   this.instances = [];
 }
 
 Shape.populateInstances = function() {
   for (let i = 0; i < 100; i++) {
-    this.instances.push(new Shape())
+    this.instances.push(new this(10))
   }
 }
 
@@ -48,9 +52,26 @@ Shape.drawAll = function() {
   }
 }
 
-// Set prototype and repair .constructor
-Shape.prototype = shapeProto;
-shapeProto.constructor = Shape;
+
+
+// ----------------------------------------------------------
+// CIRCLE 'CLASS'
+function Circle(diameter) {
+  Shape.call(this);
+  this.diameter = diameter;
+}
+
+Object.setPrototypeOf(Circle, Shape);
+let circleProto = Object.create(Shape.prototype);
+Circle.prototype = circleProto;
+
+// "Class methods"
+Circle.instances = [];  // Circle has its own instances
+Circle.prototype.draw = function() {
+  this.drawPrep();
+  circle(this.pos.x, this.pos.y, 10);
+}
+
 
 // ----------------------------------------------------------
 // Create objects
@@ -63,11 +84,12 @@ function setup() {
   colorMode(HSL)
   createCanvas(400, 400);
   frameRate(1);
+  console.log("SETUP IS COMPLETE")
 }
 
 function draw() {
-  background(220);
-  Shape.resetInstances();
-  Shape.populateInstances();
-  Shape.drawAll();
+  background(0, 0, 95);
+  Circle.nukeInstances();
+  Circle.populateInstances();
+  Circle.drawAll();
 }
