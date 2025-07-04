@@ -14,8 +14,15 @@ Orchestrator.MAX_SIZE = 22;
 
 // "Instance methods"
 Orchestrator.prototype.createShapes = function(qty=100) {
+  /* 
+  Draw circles first, then squares
+  */
+  const TYPES = 2;
+  qty = Math.round(qty / TYPES);
   for (let i = 0; i < qty; i++) {
-    this.instances.push(new Circle(random(Orchestrator.MIN_SIZE, Orchestrator.MAX_SIZE)));
+    const size = random(Orchestrator.MIN_SIZE, Orchestrator.MAX_SIZE);
+    this.instances.push(new Square(size))
+    this.instances.push(new Circle(size));
   }
 }
 
@@ -134,7 +141,12 @@ function Square(size) {
   this.size = size;
 }
 
-
+Square.prototype = Object.create(Shape.prototype);
+Square.prototype.constructor = Square;
+Square.prototype.draw = function() {
+  this.drawPrep();
+  rect(this.pos.x, this.pos.y, this.size);
+}
 
 
 // ----------------------------------------------------------
