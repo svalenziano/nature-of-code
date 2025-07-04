@@ -1,4 +1,13 @@
-// GOAL: Practice pre-ES6 syntax 
+// GOAL: Practice the Pseudo-Classical Pattern 
+// (aka pre-ES6 OOP syntax) 
+/* 
+`draw` methods -> all shapes are centered over the (0, 0) coordinate.  Allow
+  the `drawWrapper` method to translate the shape, as appropriate
+
+
+
+
+*/
 
 // ----------------------------------------------------------
 // ORCHESTRATOR 'CLASS'
@@ -35,7 +44,7 @@ Orchestrator.prototype.drawAll = function() {
       offScreen.push(...(this.instances.splice(i, 1)));  
       i -= 1;
     } else {
-      shape.draw();
+      shape.drawWrapper();
       shape.move();
     }
   }
@@ -53,10 +62,16 @@ let shapeProto = {
     // }
     // this.checkFrame(width, height);
   },
-  drawPrep() {
-    // should be called before drawing any object
+  drawWrapper() {
+    // Invokes the draw method of the object
+    let center = createVector(width/2, height/2)
     strokeWeight(this.strokeWeight);
     fill(this.color)
+    push();
+    translate(this.pos.x, this.pos.y)
+    rotate(this.rotation, center);
+    this.draw();
+    pop();
   },
   isOffScreen() {
     let s = this.getSize();
@@ -83,7 +98,7 @@ let shapeProto = {
 // Constructor
 function Shape() {
   this.pos = createVector(random(0, width), random(0, height))
-  this.rotation = random(0, 360);  // degrees
+  this.rotation = Math.round(random(0, 360));  // degrees
   this.vector = createVector(random(-1, 1), random(-1, 1));
   this.color = color(random(0, 360), 90, 60, 50);
   this.strokeWeight = 0.5;
@@ -111,7 +126,7 @@ Shape.populateInstances = function() {
 
 Shape.drawAll = function() {
   for (let instance of this.instances) {
-    instance.draw();
+    instance.drawWrapper();
   }
 }
 
@@ -130,8 +145,7 @@ Circle.prototype = circleProto;
 // "Class methods"
 Circle.instances = [];  // Circle has its own instances
 Circle.prototype.draw = function() {
-  this.drawPrep();
-  circle(this.pos.x, this.pos.y, this.diameter);
+  circle(0, 0, this.diameter);
 }
 
 // ----------------------------------------------------------
@@ -144,9 +158,16 @@ function Square(size) {
 Square.prototype = Object.create(Shape.prototype);
 Square.prototype.constructor = Square;
 Square.prototype.draw = function() {
-  this.drawPrep();
-  rect(this.pos.x, this.pos.y, this.size);
+  rectMode(CENTER);
+  rect(0, 0, this.size);
+  this.rotate();
 }
+
+Square.prototype.rotate = function(degrees = 0.05) {
+  // changes the rotation angle
+  this.rotation += degrees;
+}
+
 
 
 // ----------------------------------------------------------
