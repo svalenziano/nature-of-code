@@ -60,6 +60,20 @@ const rotation_mixin = {
   }
 }
 
+// ----------------------------------------------------------
+// HELPER FUNCTIONS
+function drawPoint(weight=5) {
+  push();
+  strokeWeight(weight);
+  color('black');
+  point(0, 0);
+  pop();
+}
+
+function randomColor() {
+  return color(random(0, 360), 90, 60, 50);
+}
+
 
 // ----------------------------------------------------------
 // SHAPE 'CLASS'
@@ -80,18 +94,22 @@ let shapeProto = {
     // Debugging?  Draw the center point as a visual reference
     translate(this.pos.x, this.pos.y)
     let center = createVector(0, 0)
-    rotate(this.rotation, center);
+    rotate(this.rotation, center); // rotate around 0,0
     
+    // Scale the shape to create sense of perspective
+    let distFromCenter = dist(this.pos.x, this.pos.y, CENTER.x, CENTER.y);
+    scale(distFromCenter / WIDTH_HEIGHT_MINIMUM * 2)
     
     strokeWeight(this.strokeWeight);
     fill(this.color)
     this.draw();
+    // drawPoint();
     pop();
     
-    // // Prep for next draw loop
-    // if (this.rotate) {
-    //   this.rotate();
-    // }
+    // Prep for next draw loop
+    if (this.rotate) {
+      this.rotate();
+    }
   },
   isOffScreen() {
     let s = this.getSize();
@@ -109,10 +127,6 @@ let shapeProto = {
   getSize() {
     return this.diameter ?? this.size ?? this.width ?? 20;
   }
-  // draw() {
-  //   this.drawPrep();
-  // circle(this.pos.x, this.pos.y, 10);
-  // }
 }
 
 // Constructor
@@ -120,7 +134,8 @@ function Shape() {
   this.pos = createVector(random(0, width), random(0, height))
   this.rotation = Math.round(random(0, 360));  // degrees
   this.vector = createVector(random(-1, 1), random(-1, 1));
-  this.color = color(random(0, 360), 90, 60, 50);
+  this.color = randomColor();
+  // this.color = color(255);
   this.strokeWeight = 0.5;
   // this.moveToCenter();
   Shape.instances.push(this);
@@ -183,8 +198,6 @@ Square.prototype.draw = function() {
   let topLeft = this.size / 2 * -1;
   let bottomRight = this.size / 2;
   rect(topLeft, topLeft, bottomRight, bottomRight);
-
-  this.rotate();
 }
 
 // Insert properties of mixin into the prototype!
@@ -207,11 +220,11 @@ let WIDTH_HEIGHT_MINIMUM;
 // ----------------------------------------------------------
 // Main Loop
 function setup() {
+  createCanvas(400, 400);
   CENTER = createVector(width/2, height/2);
   WIDTH_HEIGHT_MINIMUM = Math.min(width, height);
 
   colorMode(HSL)
-  createCanvas(400, 400);
   frameRate(30);
   shapes.createShapes(200);
   console.log("SETUP IS COMPLETE")
