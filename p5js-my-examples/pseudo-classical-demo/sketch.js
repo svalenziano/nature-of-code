@@ -68,28 +68,30 @@ let shapeProto = {
     this.pos.add(this.vector);
   },
   drawWrapper() {
-    // Invokes the draw method of the object
-    let center = createVector(width/2, height/2)
+    /* 
+    INTENT: 
+      1) Setup for drawing
+      2) Draw (Invokes the draw method of the object)
+      3) Cleanup
+    */
+    push();
+    
+    // Order of operations matters!
+    // Debugging?  Draw the center point as a visual reference
+    translate(this.pos.x, this.pos.y)
+    let center = createVector(0, 0)
+    rotate(this.rotation, center);
+    
+    
     strokeWeight(this.strokeWeight);
     fill(this.color)
-    push();
-    translate(this.pos.x, this.pos.y)
-    
-    // scale is calculated by determining if the shape is near the edge
-    let distFromCenter = dist(center.x, center.y, this.pos.x, this.pos.y);
-    // scale(distFromCenter / WIDTH_HEIGHT_MINIMUM);
-
-    // Why do we use `center` to rotate?  Not sure ... 
-    rotate(this.rotation, center);
-
     this.draw();
-
     pop();
     
-    // Prep for next draw loop
-    if (this.rotate) {
-      this.rotate();
-    }
+    // // Prep for next draw loop
+    // if (this.rotate) {
+    //   this.rotate();
+    // }
   },
   isOffScreen() {
     let s = this.getSize();
@@ -176,8 +178,12 @@ function Square(size) {
 Square.prototype = Object.create(Shape.prototype);
 Square.prototype.constructor = Square;
 Square.prototype.draw = function() {
-  rectMode(CENTER);
-  rect(0, 0, this.size);
+  // I couldn't get `CENTER` mode to work, so I'm using `CORNERS`
+  rectMode(CORNERS)
+  let topLeft = this.size / 2 * -1;
+  let bottomRight = this.size / 2;
+  rect(topLeft, topLeft, bottomRight, bottomRight);
+
   this.rotate();
 }
 
