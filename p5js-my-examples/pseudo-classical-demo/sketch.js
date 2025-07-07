@@ -4,10 +4,11 @@
 `draw` methods -> all shapes are centered over the (0, 0) coordinate.  Allow
   the `drawWrapper` method to translate the shape, as appropriate
 
-
-
-
 */
+
+
+
+
 
 // ----------------------------------------------------------
 // ORCHESTRATOR 'CLASS'
@@ -52,15 +53,19 @@ Orchestrator.prototype.drawAll = function() {
 }
 
 // ----------------------------------------------------------
+// ROTATION MIXIN
+const rotation_mixin = {
+  rotate(degrees = 0.05) {
+    this.rotation += degrees;
+  }
+}
+
+
+// ----------------------------------------------------------
 // SHAPE 'CLASS'
 let shapeProto = {
   move() {
     this.pos.add(this.vector);
-    // if (this.isOffScreen()) {
-    //   // TODO: move to bottom of stack so that it appears "behind" other shapes
-    //   this.moveToCenter();
-    // }
-    // this.checkFrame(width, height);
   },
   drawWrapper() {
     // Invokes the draw method of the object
@@ -69,9 +74,22 @@ let shapeProto = {
     fill(this.color)
     push();
     translate(this.pos.x, this.pos.y)
+    
+    // scale is calculated by determining if the shape is near the edge
+    let distFromCenter = dist(center.x, center.y, this.pos.x, this.pos.y);
+    // scale(distFromCenter / WIDTH_HEIGHT_MINIMUM);
+
+    // Why do we use `center` to rotate?  Not sure ... 
     rotate(this.rotation, center);
+
     this.draw();
+
     pop();
+    
+    // Prep for next draw loop
+    if (this.rotate) {
+      this.rotate();
+    }
   },
   isOffScreen() {
     let s = this.getSize();
@@ -163,22 +181,29 @@ Square.prototype.draw = function() {
   this.rotate();
 }
 
-Square.prototype.rotate = function(degrees = 0.05) {
-  // changes the rotation angle
-  this.rotation += degrees;
-}
+// Insert properties of mixin into the prototype!
+Object.assign(Square.prototype, rotation_mixin);
+
+// Square.prototype.rotate = function(degrees = 0.05) {
+//   // changes the rotation angle
+//   this.rotation += degrees;
+// }
+
 
 
 
 // ----------------------------------------------------------
-// Create objects
-const LIGHT_BLUE = [218, 85, 2]
-const LIGHT_GRAY = [0, 0, 95]
+// SETUP
 const shapes = new Orchestrator();
+let CENTER;
+let WIDTH_HEIGHT_MINIMUM;
 
 // ----------------------------------------------------------
 // Main Loop
 function setup() {
+  CENTER = createVector(width/2, height/2);
+  WIDTH_HEIGHT_MINIMUM = Math.min(width, height);
+
   colorMode(HSL)
   createCanvas(400, 400);
   frameRate(30);
@@ -191,3 +216,4 @@ function draw() {
   // background(...LIGHT_BLUE);
   shapes.drawAll();
 }
+
