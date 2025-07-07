@@ -138,26 +138,12 @@ function Shape() {
   // this.color = color(255);
   this.strokeWeight = 0.5;
   // this.moveToCenter();
-  Shape.instances.push(this);
 }
 
 // Set prototype and repair .constructor
 Shape.prototype = shapeProto;
 shapeProto.constructor = Shape;
 
-// "Static properties"
-Shape.instances = [];
-
-// "Static methods"
-Shape.nukeInstances = function() {
-  this.instances = [];
-}
-
-Shape.populateInstances = function() {
-  for (let i = 0; i < 100; i++) {
-    this.instances.push(new this(10))
-  }
-}
 
 Shape.drawAll = function() {
   for (let instance of this.instances) {
@@ -207,8 +193,6 @@ Object.assign(Square.prototype, rotation_mixin);
 //   // changes the rotation angle
 //   this.rotation += degrees;
 // }
-
-
 
 
 // ----------------------------------------------------------
