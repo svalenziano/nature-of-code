@@ -1,11 +1,13 @@
 "use strict";
 
+
+
 class Shape {
   constructor() {
     // position
     this.pos = createVector(CENTER.x, CENTER.y);
     // movement
-    this.speed = random(0, 0.2);
+    this.speed = random(0.5, 1);
     this.azimuth = createVector(1,1);
     this.rotation = Math.floor(random(0, 360));
     // appearance
@@ -33,7 +35,7 @@ class Shape {
   }
 
   move() {
-    this.pos.add(this.azimuth);
+    this.pos.add(p5.Vector.mult(this.azimuth, this.speed));
     if (this.isOffScreen()) {
       this.resetPosition();
     }
