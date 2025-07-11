@@ -1,5 +1,7 @@
 "use strict";
 
+import {Utils} from "./utils.js"
+
 class Orchestrator {
   constructor() {
     this.instances = [];
@@ -22,7 +24,7 @@ class Orchestrator {
 }
 
 class Shape {
-  
+
   static #MIN_SIZE = 10;
   static #MAX_SIZE = 50;
   static #MAX_ROTATION_SPEED = 5;
@@ -62,6 +64,14 @@ class Shape {
 
   randomizeSpeed() {
     this.speed = random(0.1,0.5);
+  }
+
+  randomizeRotation() {
+    this.rotationSpeed = random(
+      Shape.#MIN_ROTATION_SPEED, 
+      Shape.#MAX_ROTATION_SPEED
+      );
+    this.rotationDirection = Math;
   }
 
   draw() {
@@ -167,3 +177,4 @@ function draw() {
   background(220);
   o.drawInstances();
 }
+
