@@ -5,10 +5,13 @@ class Orchestrator {
     this.instances = [];
   }
 
-  createShapes(num=100) {
-    for (let i = 0; i < num; i++) {
-      this.instances.push(new Circle());
-    }
+  createShapes(qty=100, types=[Circle]) {
+    let qtyPerType = Math.ceil(qty / types.length)
+    types.forEach((Type) => {
+      for (let i = 0; i < qtyPerType; i++) {
+        this.instances.push(new Type());
+      }
+    })
   }
 
   drawInstances() {
@@ -20,8 +23,10 @@ class Orchestrator {
 
 class Shape {
   
-  static MIN_SIZE = 10;
-  static MAX_SIZE = 50;
+  static #MIN_SIZE = 10;
+  static #MAX_SIZE = 50;
+  static #MAX_ROTATION_SPEED = 5;
+  static #MIN_ROTATION_SPEED = 1;
 
   // "public class field" (these become instance properties)
   strokeWeight = 0.5;
@@ -30,7 +35,7 @@ class Shape {
   fill = color(255, 255, 255, 150);
 
   static randomSize() {
-    return random(Shape.MIN_SIZE, Shape.MAX_SIZE);
+    return random(Shape.#MIN_SIZE, Shape.#MAX_SIZE);
   }
 
   constructor() {
@@ -136,9 +141,9 @@ class Circle extends Shape {
 
 class Square extends Shape {
   
-  constructor(size) {
+  constructor() {
     super();
-    this.size = size;
+    this.size = Shape.randomSize();
   }
 
   draw() {
@@ -149,13 +154,15 @@ class Square extends Shape {
 let CENTER;
 let o;
 
+//  SETUP AND LOOP -------------------------------------------------------------
 function setup() {
   createCanvas(400, 400);
   CENTER = createVector(width / 2, height / 2);
   o = new Orchestrator();
-  o.createShapes(100);
+  o.createShapes(100, [Square, Circle]);
 }
 
+// MAIN LOOP -------------------------------------------------------------
 function draw() {
   background(220);
   o.drawInstances();
