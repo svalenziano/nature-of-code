@@ -27,9 +27,13 @@ class Shape {
   static #MIN_SIZE = 10;
   static #MAX_SIZE = 50;
 
+  // Speed Unit = pixels per frame
+  static #MIN_SPEED = 0.1;
+  static #MAX_SPEED = 0.5;
+
   // Rotation Unit = degrees per frame
-  static #MAX_ROTATION_SPEED = 5;
-  static #MIN_ROTATION_SPEED = 1;
+  static #MAX_ROTATION_SPEED = 0.1;
+  static #MIN_ROTATION_SPEED = 0.02;
 
   // "public class field" (these become instance properties)
   strokeWeight = 0.5;
@@ -55,13 +59,14 @@ class Shape {
     strokeWeight(this.strokeWeight);
     stroke(this.strokeColor);
     
-    // ROTATION
-    // if (this.rotationAzimuth) {
-    //   rotate(this.rotationAzimuth.angle);
-    // }
-    // rotate(20, );
-
     translate(this.pos.x, this.pos.y);
+    
+    // ROTATION
+    if (this.rotationAzimuth) {
+      rotate(this.rotationAzimuth.heading(), this.pos);
+      this.rotate();
+    }
+    
     let scaleFactor = this.getScaleFactorByDist(0.1, 1, 0, width/2, CENTER);
     scale(scaleFactor)
     this.draw();
@@ -70,15 +75,18 @@ class Shape {
   }
 
   randomizeSpeed() {
-    this.speed = random(0.1,0.5);
+    this.speed = random(Shape.#MIN_SPEED, Shape.#MAX_SPEED);
   }
 
   randomizeRotation() {
+    // #LOA - figure out the math needed to scale the rotation so that larger object spin slower, but there's still enough variation to look good.
     this.rotationAzimuth = createVector(1, 1).rotate(random(0, 360));
     this.rotationSpeed = random(
       Shape.#MIN_ROTATION_SPEED, 
       Shape.#MAX_ROTATION_SPEED
       );
+    // Slower objects should spin slower
+    // this.rotationSpeed *= this.speed ?? 1;
     this.rotationDirection = Utils.randomChoice([1, -1]);  // 1 = clockwise
   }
 
@@ -171,11 +179,15 @@ class Square extends Shape {
     super();
     this.size = Shape.randomSize();
     this.randomizeRotation();
+    // drawOrigin makes it easy to draw square 'from the center'
+    this.drawOrigin = this.size / 2 * -1;
   }
 
   draw() {
-    rect(0, 0, this.size)
+    rect(this.drawOrigin, this.drawOrigin, this.size)
   }
+
+
 }
 
 class Utils {
@@ -201,13 +213,25 @@ class Utils {
 
 let CENTER;
 let o;
+const CONFIGS = {
+  JUMBO: {
+    width: 1000,
+    shapeCount: 400,
+  },
+  STANDARD: {
+    width: 400,
+    shapeCount: 100,
+  },
+}
+// Select a config from the above configs
+const CONFIG = CONFIGS.JUMBO;
 
 //  SETUP AND LOOP -------------------------------------------------------------
 function setup() {
-  createCanvas(400, 400);
+  createCanvas(CONFIG.width, CONFIG.width);
   CENTER = createVector(width / 2, height / 2);
   o = new Orchestrator();
-  o.createShapes(100, [Square, Circle]);
+  o.createShapes(CONFIG.shapeCount, [Square, Circle]);
 }
 
 // MAIN LOOP -------------------------------------------------------------
