@@ -1,7 +1,5 @@
 "use strict";
 
-import {Utils} from "./utils.js"
-
 class Orchestrator {
   constructor() {
     this.instances = [];
@@ -25,8 +23,11 @@ class Orchestrator {
 
 class Shape {
 
+  // Size Unit = pixels (this is the standard p5 unit)
   static #MIN_SIZE = 10;
   static #MAX_SIZE = 50;
+
+  // Rotation Unit = degrees per frame
   static #MAX_ROTATION_SPEED = 5;
   static #MIN_ROTATION_SPEED = 1;
 
@@ -43,8 +44,7 @@ class Shape {
   constructor() {
     this.resetPosition();
     this.randomizeSpeed()
-    this.azimuth = createVector(1, 1).rotate(random(0, 360));
-    this.rotation = Math.floor(random(0, 360));
+    this.movementDirection = createVector(1, 1).rotate(random(0, 360));
   }
   
   // these are actions that should happen with every call to `draw`
@@ -54,6 +54,13 @@ class Shape {
     fill(this.fill);
     strokeWeight(this.strokeWeight);
     stroke(this.strokeColor);
+    
+    // ROTATION
+    // if (this.rotationAzimuth) {
+    //   rotate(this.rotationAzimuth.angle);
+    // }
+    // rotate(20, );
+
     translate(this.pos.x, this.pos.y);
     let scaleFactor = this.getScaleFactorByDist(0.1, 1, 0, width/2, CENTER);
     scale(scaleFactor)
@@ -67,11 +74,20 @@ class Shape {
   }
 
   randomizeRotation() {
+    this.rotationAzimuth = createVector(1, 1).rotate(random(0, 360));
     this.rotationSpeed = random(
       Shape.#MIN_ROTATION_SPEED, 
       Shape.#MAX_ROTATION_SPEED
       );
-    this.rotationDirection = Math;
+    this.rotationDirection = Utils.randomChoice([1, -1]);  // 1 = clockwise
+  }
+
+  reverseRotation() {
+    this.rotationDirection *= -1;
+  }
+
+  rotate() {
+    this.rotationAzimuth.rotate(this.rotationSpeed * this.rotationDirection);
   }
 
   draw() {
@@ -79,7 +95,7 @@ class Shape {
   }
 
   move() {
-    this.pos.add(p5.Vector.mult(this.azimuth, this.speed));
+    this.pos.add(p5.Vector.mult(this.movementDirection, this.speed));
     if (this.isOffScreen()) {
       this.resetPosition();
     }
@@ -92,10 +108,10 @@ class Shape {
       CHOSEN METHOD: You must be able to tell if the shape is moving towards or away from the screen
       ALTERNATIVE: (Not used) You must track whether or not a shape has been on screen
     */
-    return ((this.pos.x < 0      - this.getSize() && this.azimuth.x < 0)||
-            (this.pos.x > width  + this.getSize() && this.azimuth.x > 0)||
-            (this.pos.y < 0      - this.getSize() && this.azimuth.y < 0)||
-            (this.pos.y > height + this.getSize() && this.azimuth.y > 0));
+    return ((this.pos.x < 0      - this.getSize() && this.movementDirection.x < 0)||
+            (this.pos.x > width  + this.getSize() && this.movementDirection.x > 0)||
+            (this.pos.y < 0      - this.getSize() && this.movementDirection.y < 0)||
+            (this.pos.y > height + this.getSize() && this.movementDirection.y > 0));
   }
 
   resetPosition() {
@@ -154,10 +170,32 @@ class Square extends Shape {
   constructor() {
     super();
     this.size = Shape.randomSize();
+    this.randomizeRotation();
   }
 
   draw() {
     rect(0, 0, this.size)
+  }
+}
+
+class Utils {
+  
+  static randomChoice(choices) {
+    let choice = Math.floor(Math.random() * choices.length);
+    return choice;
+  }
+  
+  // TESTS
+
+  static testRandomChoice(trials = 100000) {
+    let result = [];
+
+    for (let i = 0; i < trials; i++) {
+      result.push(Utils.randomChoice([1, 0]));
+    }
+
+    let sum = result.reduce((accum, v) => accum + v);
+    console.log(`Result: ${sum} of ${TRIALS}`)
   }
 }
 
