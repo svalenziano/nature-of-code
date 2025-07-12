@@ -33,8 +33,16 @@ class Orchestrator {
     this.forEachInstance(Shape.prototype.rotate)
   }
 
-  pauseAll() {
-
+  getShapes(x, y, radius=30) {
+    // position = p5.Vector object
+    this.instancesToMove = [];
+    for (let i of instances) {
+      if (dist(i.pos.x, i.pos.y, x, y) <= radius) {
+        this.instancesToMove.push(i);
+        
+        i.fill(10);  // 🔴
+      }
+    }
   }
 
 
@@ -51,8 +59,8 @@ class Shape {
   static #MAX_SPEED = 0.5;
 
   // Rotation Unit = degrees per frame
-  static #MAX_ROTATION_SPEED = 0.1;
-  static #MIN_ROTATION_SPEED = 0.02;
+  static #MAX_ROTATION_SPEED = 0.05;
+  static #MIN_ROTATION_SPEED = 0.01;
 
   // "public class field" (these become instance properties)
   strokeWeight = 0.5;
@@ -218,23 +226,28 @@ class Cursor {
 class Utils {
   
   static randomChoice(choices) {
-    let choice = Math.floor(Math.random() * choices.length);
-    return choice;
+    let idx = Math.floor(Math.random() * choices.length);
+    return choices[idx];
   }
   
   // TESTS
 
-  static testRandomChoice(trials = 100000) {
+  static testRandomChoice(trials = 10, choices = [1,0]) {
     let result = [];
 
     for (let i = 0; i < trials; i++) {
-      result.push(Utils.randomChoice([1, 0]));
+      let t = Utils.randomChoice(choices);
+      result.push(t);
+      console.log(t);
     }
 
     let sum = result.reduce((accum, v) => accum + v);
-    console.log(`Result: ${sum} of ${TRIALS}`)
+    console.log(`Result: ${sum} of ${trials}`)
   }
 }
+
+// GLOBALS AND CONFIG ----------------------------------------------------------
+
 
 let CENTER_OF_SKETCH;
 let o;
@@ -251,9 +264,20 @@ const CONFIGS = {
 // Select a config from the above configs
 const CONFIG = CONFIGS.STANDARD;
 
+// EVENTS -------------------------------------------------------------
+function mousePressed() {
+
+}
+
+function mouseReleased() {
+
+}
+
+
 //  SETUP AND LOOP -------------------------------------------------------------
 function setup() {
   createCanvas(CONFIG.width, CONFIG.width);
+  frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
   o = new Orchestrator();
   o.createShapes(CONFIG.shapeCount, [Square, Circle]);
