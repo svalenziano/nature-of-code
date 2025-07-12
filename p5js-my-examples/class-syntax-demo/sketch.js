@@ -63,7 +63,11 @@ class Orchestrator {
     this.forEachInstance(Shape.prototype.moveWithMouse, this.selectedInstances);
   }
 
-  getShapes(x, y, radius=30) {
+  modifyColorOnSelected() {
+    this.forEachInstance(Shape.prototype.changeColor, this.selectedInstances);
+  }
+
+  getSelection(x, y, radius=30) {
     // position = p5.Vector object
     this.selectedInstances = [];
     for (let i of this.instances) {
@@ -91,11 +95,15 @@ class Shape {
   static #MAX_ROTATION_SPEED = 0.05;
   static #MIN_ROTATION_SPEED = 0.01;
 
+  // Colors
+  static #COLOR_INITIAL = 'rgba(255, 255, 255, 0.6)';
+  static #COLOR_MODIFIED = 'rgba(0, 0, 0, 0.8)'
+
   // "public class field" (these become instance properties)
   strokeWeight = 0.5;
   strokeColor = color(10);
   pos = createVector(CENTER_OF_SKETCH.x, CENTER_OF_SKETCH.y);
-  fill = color(255, 255, 255, 150);
+  fill = Shape.#COLOR_INITIAL;
 
   static randomSize() {
     return random(Shape.#MIN_SIZE, Shape.#MAX_SIZE);
@@ -168,6 +176,7 @@ class Shape {
   }
 
   moveWithMouse() {
+    // todo: eliminate the lag btw cursor and shapes
     this.pos.add(movedX, movedY); // Uses built-in p5 mouse movement variables
   }
 
@@ -214,6 +223,10 @@ class Shape {
     let scale = map(distance, minDist, maxDist, minScale, maxScale, false);
     return scale;
   }
+
+  changeColor() {
+    this.fill = Shape.#COLOR_MODIFIED;
+  }
 }
 
 class Circle extends Shape {
@@ -254,20 +267,34 @@ class Square extends Shape {
 }
 
 class Cursor {
-  static #MAX_DIAMETER = CONFIG.width / 2;
-  static #MIN_DIAMETER = 10;
+  static #MAX_DIAMETER = CONFIG.width / 1.5;
+  static #MIN_DIAMETER = 15;
+  static #MOUSE_WHEEL_DAMPER = 0.2;
 
   diameter = CONFIG.width / 10;
-  fill = 'rgba(209, 100, 195, 0.2)';
-
-  draw() {
-    fill(this.fill);
-    noStroke();
-    circle(mouseX, mouseY, this.diameter);
-  }
+  fill = 'rgba(234, 255, 117, 0.2)';
+  strokeColor = 'rgba(233, 255, 120, 0.6)';
+  strokeWeightLight = 1.5;
+  strokeWeightHeavy = 3;
 
   get radius() {
     return this.diameter / 2;
+  }
+
+  draw() {
+    if (mouseIsPressed) {
+      strokeWeight(this.strokeWeightHeavy);
+    } else {
+      strokeWeight(this.strokeWeightLight);
+    }
+    fill(this.fill);
+    stroke(this.strokeColor);
+    circle(mouseX, mouseY, this.diameter);
+  }
+
+  changeDiameter(amount) {
+    let newDiameter = this.diameter + (amount * Cursor.#MOUSE_WHEEL_DAMPER) * -1;
+    this.diameter = constrain(newDiameter, Cursor.#MIN_DIAMETER, Cursor.#MAX_DIAMETER);
   }
 }
 
@@ -296,12 +323,14 @@ class Utils {
 
 // EVENTS -------------------------------------------------------------
 function mousePressed() {
-  o.getShapes(mouseX, mouseY, myCursor.radius);
+  o.getSelection(mouseX, mouseY, myCursor.radius);
 }
 
-function mouseReleased() {
-
+function mouseWheel(event) {
+  myCursor.changeDiameter(event.delta);
 }
+
+
 
 
 //  SETUP AND LOOP -------------------------------------------------------------
@@ -320,6 +349,7 @@ function draw() {
   o.drawAll();
   if (mouseIsPressed) {
     o.moveSelected()
+    o.modifyColorOnSelected();
   } else {
     o.moveAll();
   }
