@@ -38,7 +38,7 @@ class Shape {
   // "public class field" (these become instance properties)
   strokeWeight = 0.5;
   strokeColor = color(10);
-  pos = createVector(CENTER.x, CENTER.y);
+  pos = createVector(CENTER_OF_SKETCH.x, CENTER_OF_SKETCH.y);
   fill = color(255, 255, 255, 150);
 
   static randomSize() {
@@ -67,7 +67,7 @@ class Shape {
       this.rotate();
     }
     
-    let scaleFactor = this.getScaleFactorByDist(0.1, 1, 0, width/2, CENTER);
+    let scaleFactor = this.getScaleFactorByDist(0.1, 1, 0, width/2, CENTER_OF_SKETCH);
     scale(scaleFactor)
     this.draw();
     pop();
@@ -123,8 +123,8 @@ class Shape {
   }
 
   resetPosition() {
-    this.pos.x = CENTER.x;
-    this.pos.y = CENTER.y;
+    this.pos.x = CENTER_OF_SKETCH.x;
+    this.pos.y = CENTER_OF_SKETCH.y;
   }
 
   getSize() {
@@ -137,7 +137,7 @@ class Shape {
     maxScale=1, 
     minDist, 
     maxDist, 
-    from=CENTER) {
+    from=CENTER_OF_SKETCH) {
     /* 
     minScale = minimum scale factor.  eg: 0.1 = 10% scale
     maxScale = maximum scale factor.  eg: 1 = full scale
@@ -190,6 +190,10 @@ class Square extends Shape {
 
 }
 
+class Cursor {
+  
+}
+
 class Utils {
   
   static randomChoice(choices) {
@@ -211,7 +215,7 @@ class Utils {
   }
 }
 
-let CENTER;
+let CENTER_OF_SKETCH;
 let o;
 const CONFIGS = {
   JUMBO: {
@@ -224,12 +228,12 @@ const CONFIGS = {
   },
 }
 // Select a config from the above configs
-const CONFIG = CONFIGS.JUMBO;
+const CONFIG = CONFIGS.STANDARD;
 
 //  SETUP AND LOOP -------------------------------------------------------------
 function setup() {
   createCanvas(CONFIG.width, CONFIG.width);
-  CENTER = createVector(width / 2, height / 2);
+  CENTER_OF_SKETCH = createVector(width / 2, height / 2);
   o = new Orchestrator();
   o.createShapes(CONFIG.shapeCount, [Square, Circle]);
 }
@@ -238,5 +242,6 @@ function setup() {
 function draw() {
   background(220);
   o.drawInstances();
+  cursor(CROSS);
 }
 
