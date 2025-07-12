@@ -1,5 +1,29 @@
 "use strict";
 
+
+// GLOBALS AND CONFIG ----------------------------------------------------------
+
+let CENTER_OF_SKETCH;
+let o;  // orchestrator instance
+let myCursor;
+
+
+const CONFIGS = {
+  JUMBO: {
+    width: 1000,
+    shapeCount: 400,
+  },
+  STANDARD: {
+    width: 400,
+    shapeCount: 100,
+  },
+}
+// Select a config from the above configs
+const CONFIG = CONFIGS.STANDARD;
+
+
+// CLASSES ---------------------------------------------------------------------
+
 class Orchestrator {
   // declare here (instead of in constructor) for easier IDE navigation
   instances = [];
@@ -230,7 +254,21 @@ class Square extends Shape {
 }
 
 class Cursor {
+  static #MAX_DIAMETER = CONFIG.width / 2;
+  static #MIN_DIAMETER = 10;
 
+  diameter = CONFIG.width / 10;
+  fill = 'rgba(209, 100, 195, 0.2)';
+
+  draw() {
+    fill(this.fill);
+    noStroke();
+    circle(mouseX, mouseY, this.diameter);
+  }
+
+  get radius() {
+    return this.diameter / 2;
+  }
 }
 
 class Utils {
@@ -256,27 +294,9 @@ class Utils {
   }
 }
 
-// GLOBALS AND CONFIG ----------------------------------------------------------
-
-
-let CENTER_OF_SKETCH;
-let o;
-const CONFIGS = {
-  JUMBO: {
-    width: 1000,
-    shapeCount: 400,
-  },
-  STANDARD: {
-    width: 400,
-    shapeCount: 100,
-  },
-}
-// Select a config from the above configs
-const CONFIG = CONFIGS.STANDARD;
-
 // EVENTS -------------------------------------------------------------
 function mousePressed() {
-  o.getShapes(mouseX, mouseY, 30);
+  o.getShapes(mouseX, mouseY, myCursor.radius);
 }
 
 function mouseReleased() {
@@ -290,6 +310,7 @@ function setup() {
   frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
   o = new Orchestrator();
+  myCursor = new Cursor();
   o.createShapes(CONFIG.shapeCount, [Square, Circle]);
 }
 
@@ -302,6 +323,8 @@ function draw() {
   } else {
     o.moveAll();
   }
-  cursor(CROSS);
+  cursor(CROSS);  // fallback, in case noCursor doesn't work
+  noCursor();
+  myCursor.draw();
 }
 
