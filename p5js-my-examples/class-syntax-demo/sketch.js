@@ -3,7 +3,7 @@
 class Orchestrator {
   // declare here (instead of in constructor) for easier IDE navigation
   instances = [];
-  instancesToMove = [];
+  selectedInstances = [];
 
   constructor() {
     // nothing to see here
@@ -18,8 +18,8 @@ class Orchestrator {
     })
   }
 
-  forEachInstance(callback) {
-    for (let i of this.instances) {
+  forEachInstance(callback, collection=this.instances) {
+    for (let i of collection) {
       callback.call(i);
     }
   }
@@ -29,18 +29,23 @@ class Orchestrator {
   }
 
   moveAll() {
-    this.forEachInstance(Shape.prototype.move)
+    this.forEachInstance(Shape.prototype.autoMove)
     this.forEachInstance(Shape.prototype.rotate)
+  }
+
+  moveSelected() {
+    // for each selected instance
+    // invoke manualMove method
+    this.forEachInstance(Shape.prototype.moveWithMouse, this.selectedInstances);
   }
 
   getShapes(x, y, radius=30) {
     // position = p5.Vector object
-    this.instancesToMove = [];
+    this.selectedInstances = [];
     for (let i of this.instances) {
       if (dist(i.pos.x, i.pos.y, x, y) <= radius) {
-        this.instancesToMove.push(i);
-        
-        i.fill = color(10);  // 🔴
+        this.selectedInstances.push(i);
+        // i.fill = color(10);  // for debugging
       }
     }
   }
@@ -131,12 +136,17 @@ class Shape {
     circle(0, 0, 50);
   }
 
-  move() {
+  autoMove() {
     this.pos.add(p5.Vector.mult(this.movementDirection, this.speed));
     if (this.isOffScreen()) {
       this.resetPosition();
     }
   }
+
+  moveWithMouse() {
+    this.pos.add(movedX, movedY); // Uses built-in p5 mouse movement variables
+  }
+
 
   isOffScreen() {
     /* 
@@ -287,7 +297,9 @@ function setup() {
 function draw() {
   background(220);
   o.drawAll();
-  if (!mouseIsPressed) {
+  if (mouseIsPressed) {
+    o.moveSelected()
+  } else {
     o.moveAll();
   }
   cursor(CROSS);
