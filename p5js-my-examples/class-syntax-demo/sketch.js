@@ -36,11 +36,11 @@ class Orchestrator {
   getShapes(x, y, radius=30) {
     // position = p5.Vector object
     this.instancesToMove = [];
-    for (let i of instances) {
+    for (let i of this.instances) {
       if (dist(i.pos.x, i.pos.y, x, y) <= radius) {
         this.instancesToMove.push(i);
         
-        i.fill(10);  // 🔴
+        i.fill = color(10);  // 🔴
       }
     }
   }
@@ -266,7 +266,7 @@ const CONFIG = CONFIGS.STANDARD;
 
 // EVENTS -------------------------------------------------------------
 function mousePressed() {
-
+  o.getShapes(mouseX, mouseY, 30);
 }
 
 function mouseReleased() {
