@@ -24,13 +24,19 @@ class Orchestrator {
     }
   }
 
-  drawInstances() {
+  drawAll() {
     this.forEachInstance(Shape.prototype.drawWrapper)
+  }
+
+  moveAll() {
+
   }
 
   pauseAll() {
 
   }
+
+
 }
 
 class Shape {
@@ -76,7 +82,6 @@ class Shape {
     // ROTATION
     if (this.rotationAzimuth) {
       rotate(this.rotationAzimuth.heading(), this.pos);
-      this.rotate();
     }
     
     let scaleFactor = this.getScaleFactorByDist(0.1, 1, 0, width/2, CENTER_OF_SKETCH);
@@ -84,6 +89,7 @@ class Shape {
     this.draw();
     pop();
     this.move();
+    this.rotate();
   }
 
   randomizeSpeed() {
@@ -107,7 +113,9 @@ class Shape {
   }
 
   rotate() {
-    this.rotationAzimuth.rotate(this.rotationSpeed * this.rotationDirection);
+    if (this.rotationAzimuth) {
+      this.rotationAzimuth.rotate(this.rotationSpeed * this.rotationDirection);
+    }
   }
 
   draw() {
@@ -253,7 +261,10 @@ function setup() {
 // MAIN LOOP -------------------------------------------------------------
 function draw() {
   background(220);
-  o.drawInstances();
+  o.drawAll();
+  if (!mouseIsPressed) {
+    o.moveAll();
+  }
   cursor(CROSS);
 }
 
