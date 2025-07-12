@@ -29,7 +29,8 @@ class Orchestrator {
   }
 
   moveAll() {
-
+    this.forEachInstance(Shape.prototype.move)
+    this.forEachInstance(Shape.prototype.rotate)
   }
 
   pauseAll() {
@@ -88,8 +89,8 @@ class Shape {
     scale(scaleFactor)
     this.draw();
     pop();
-    this.move();
-    this.rotate();
+    // this.move();
+    // this.rotate();
   }
 
   randomizeSpeed() {
