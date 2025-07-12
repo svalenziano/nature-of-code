@@ -1,8 +1,12 @@
 "use strict";
 
 class Orchestrator {
+  // declare here (instead of in constructor) for easier IDE navigation
+  instances = [];
+  instancesToMove = [];
+
   constructor() {
-    this.instances = [];
+    // nothing to see here
   }
 
   createShapes(qty=100, types=[Circle]) {
@@ -14,10 +18,18 @@ class Orchestrator {
     })
   }
 
-  drawInstances() {
+  forEachInstance(callback) {
     for (let i of this.instances) {
-      i.drawWrapper();
+      callback.call(i);
     }
+  }
+
+  drawInstances() {
+    this.forEachInstance(Shape.prototype.drawWrapper)
+  }
+
+  pauseAll() {
+
   }
 }
 
@@ -191,7 +203,7 @@ class Square extends Shape {
 }
 
 class Cursor {
-  
+
 }
 
 class Utils {
