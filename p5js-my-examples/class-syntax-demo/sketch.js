@@ -3,7 +3,7 @@
 /* 
 ABOUT THIS SKETCH
 
-- Press `Escape` for tips
+- Press `Escape` for help
 
 - GOAL: practice ES6 class syntax
 
@@ -129,6 +129,21 @@ class Help {
   }
 }
 
+class Colors {
+  static CURSOR_FILL = 'rgba(234, 255, 117, 0.2)'
+  static CURSOR_STROKE = 'rgba(233, 255, 120, 0.6)'
+  static INITIAL_SHAPE_COLOR = 'rgba(255, 255, 255, 0.6)'
+  static MODIFIED_SHAPE_COLOR = 'rgba(0, 0, 0, 0.8)';
+
+  static generateInitialColor() {
+    return'hsl(0, 87.20%, 75.50%)'
+  }
+
+  static generateModifiedColor() {
+    return'hsl(0, 100.00%, 50.20%)'
+  }
+}
+
 class Orchestrator {
   // declare here (instead of in constructor) for easier IDE navigation
   instances = [];
@@ -206,8 +221,8 @@ class Shape {
   static #MIN_ROTATION_SPEED = 0.01;
 
   // Colors
-  static #COLOR_INITIAL = 'rgba(255, 255, 255, 0.6)';
-  static #COLOR_MODIFIED = 'rgba(0, 0, 0, 0.8)'
+  static #COLOR_INITIAL = Colors.INITIAL_SHAPE_COLOR;
+  static #COLOR_MODIFIED = Colors.MODIFIED_SHAPE_COLOR;
 
   // "public class field" (these become instance properties)
   strokeWeight = 0.5;
@@ -371,8 +386,6 @@ class Square extends Shape {
   draw() {
     rect(this.drawOrigin, this.drawOrigin, this.size)
   }
-
-
 }
 
 class Cursor {
@@ -381,8 +394,8 @@ class Cursor {
   static #MOUSE_WHEEL_DAMPER = 0.2;
 
   diameter = CONFIG.width / 10;
-  fill = 'rgba(234, 255, 117, 0.2)';
-  strokeColor = 'rgba(233, 255, 120, 0.6)';
+  fill = Colors.CURSOR_FILL;
+  strokeColor = Colors.CURSOR_STROKE;
   strokeWeightLight = 1.5;
   strokeWeightHeavy = 3;
 
@@ -406,6 +419,7 @@ class Cursor {
     this.diameter = constrain(newDiameter, Cursor.#MIN_DIAMETER, Cursor.#MAX_DIAMETER);
   }
 }
+
 
 class Utils {
   
