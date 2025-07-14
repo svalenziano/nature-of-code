@@ -47,14 +47,12 @@ function setup() {
   createCanvas(CONFIG.width, CONFIG.width);
   frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
-  o = new Orchestrator(
+  o = Orchestrator.createInstance(
     CONFIG.shapeCount, 
-    [Square, Circle], 
-    Colors.INITIAL_SHAPE_COLOR, 
-    Colors.MODIFIED_SHAPE_COLOR
-    );
+    [Square, Circle],
+    Colors.INITIAL_SHAPE_COLOR,
+    Colors.MODIFIED_SHAPE_COLOR)
   myCursor = new Cursor();
-  o.createShapes();
 }
 
 // MAIN LOOP -------------------------------------------------------------
@@ -151,6 +149,21 @@ class Colors {
 
 class Orchestrator {
   static instances = [];
+
+  // Create an initialize an Orchestrator Instance
+  static createInstance(shapeQty, shapes, fill_initial, fill_modified) {
+    let o = new Orchestrator(
+        shapeQty ?? CONFIG.shapeCount, 
+        shapes ?? [Square, Circle], 
+        fill_initial, 
+        fill_modified,
+      )
+    
+    this.instances.push(o);
+    o. createShapes();
+    return o;
+  }
+
   
   // Instance vars
   // declare here (instead of in constructor) for easier IDE navigation
