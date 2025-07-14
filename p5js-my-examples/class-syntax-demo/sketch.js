@@ -60,8 +60,8 @@ function draw() {
   background(220);
 
   // Draw shapes
-  o.drawAll();
-  // ShapeGroup.drawAll();
+  // o.drawAll();
+  ShapeGroup.drawAll();
   if (mouseIsPressed) {
     o.moveSelected()
     o.modifyColorOnSelected();
@@ -165,7 +165,8 @@ class ShapeGroup {
   }
 
   static drawAll() {
-    this.instances.forEach(this.prototype.drawAll)
+    Utils.forEachInstance(this.prototype.drawAll, this.instances);
+    // this.instances.forEach(this.prototype.drawAll)
   }
   
   // Instance vars
@@ -200,29 +201,23 @@ class ShapeGroup {
     this.shapes = [];
   }
 
-  forEachInstance(callback, collection=this.shapes) {
-    for (let i of collection) {
-      callback.call(i);
-    }
-  }
-
   drawAll() {
-    this.forEachInstance(Shape.prototype.drawWrapper)
+    Utils.forEachInstance(Shape.prototype.drawWrapper, this.shapes)
   }
 
   moveAll() {
-    this.forEachInstance(Shape.prototype.autoMove)
-    this.forEachInstance(Shape.prototype.rotate)
+    Utils.forEachInstance(Shape.prototype.autoMove, this.shapes)
+    Utils.forEachInstance(Shape.prototype.rotate, this.shapes)
   }
 
   moveSelected() {
     // for each selected instance
     // invoke manualMove method
-    this.forEachInstance(Shape.prototype.moveWithMouse, this.selectedShapes);
+    Utils.forEachInstance(Shape.prototype.moveWithMouse, this.selectedShapes);
   }
 
   modifyColorOnSelected() {
-    this.forEachInstance(Shape.prototype.changeColor, this.selectedShapes);
+    Utils.forEachInstance(Shape.prototype.changeColor, this.selectedShapes);
   }
 
   getSelection(x, y, radius=30) {
@@ -459,6 +454,12 @@ class Utils {
   static randomChoice(choices) {
     let idx = Math.floor(Math.random() * choices.length);
     return choices[idx];
+  }
+
+  static forEachInstance(callback, collection) {
+    for (let i of collection) {
+      callback.call(i);
+    }
   }
   
   // TESTS
