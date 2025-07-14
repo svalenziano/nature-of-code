@@ -47,9 +47,9 @@ function setup() {
   createCanvas(CONFIG.width, CONFIG.width);
   frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
-  o = new Orchestrator();
+  o = new Orchestrator(CONFIG.shapeCount, [Square, Circle]);
   myCursor = new Cursor();
-  o.createShapes(CONFIG.shapeCount, [Square, Circle]);
+  o.createShapes();
 }
 
 // MAIN LOOP -------------------------------------------------------------
@@ -91,7 +91,7 @@ function keyPressed(event) {
   } else if (event.code === 'Space') {
     // #LOA  --- RESET STUFF
     o.clearShapes();
-    o.createShapes(CONFIG.shapeCount);
+    o.createShapes();
   }
 }
 
@@ -139,9 +139,9 @@ class Orchestrator {
     this.types = types;
   }
 
-  createShapes(qty=100, types=[Circle]) {
-    let qtyPerType = Math.ceil(qty / types.length)
-    types.forEach((Type) => {
+  createShapes() {
+    let qtyPerType = Math.ceil(this.qty / this.types.length)
+    this.types.forEach((Type) => {
       for (let i = 0; i < qtyPerType; i++) {
         this.instances.push(new Type());
       }
