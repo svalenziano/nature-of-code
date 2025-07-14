@@ -47,7 +47,7 @@ function setup() {
   createCanvas(CONFIG.width, CONFIG.width);
   frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
-  o = Orchestrator.createInstance(
+  o = ShapeGroup.createInstance(
     CONFIG.shapeCount, 
     [Square, Circle],
     Colors.INITIAL_SHAPE_COLOR,
@@ -61,6 +61,7 @@ function draw() {
 
   // Draw shapes
   o.drawAll();
+  // ShapeGroup.drawAll();
   if (mouseIsPressed) {
     o.moveSelected()
     o.modifyColorOnSelected();
@@ -147,12 +148,11 @@ class Colors {
   }
 }
 
-class Orchestrator {
+class ShapeGroup {
   static instances = [];
 
-  // Create an initialize an Orchestrator Instance
   static createInstance(shapeQty, shapes, fill_initial, fill_modified) {
-    let o = new Orchestrator(
+    let o = new ShapeGroup(
         shapeQty ?? CONFIG.shapeCount, 
         shapes ?? [Square, Circle], 
         fill_initial, 
@@ -164,11 +164,14 @@ class Orchestrator {
     return o;
   }
 
+  static drawAll() {
+    this.instances.forEach(this.prototype.drawAll)
+  }
   
   // Instance vars
   // declare here (instead of in constructor) for easier IDE navigation
-  instances = [];
-  selectedInstances = [];
+  shapes = [];
+  selectedShapes = [];
 
   constructor(
     qty, 
@@ -180,7 +183,7 @@ class Orchestrator {
       this.types = types;
       this.fill_initial = fill_initial;
       this.fill_modified = fill_modified;
-      Orchestrator.instances.push(this);
+      ShapeGroup.instances.push(this);
   }
 
   createShapes() {
@@ -188,16 +191,16 @@ class Orchestrator {
     let qtyPerType = Math.ceil(this.qty / this.types.length)
     this.types.forEach((Type) => {
       for (let i = 0; i < qtyPerType; i++) {
-        this.instances.push(new Type(this.fill_initial, this.fill_modified));
+        this.shapes.push(new Type(this.fill_initial, this.fill_modified));
       }
     })
   }
 
   clearShapes() {
-    this.instances = [];
+    this.shapes = [];
   }
 
-  forEachInstance(callback, collection=this.instances) {
+  forEachInstance(callback, collection=this.shapes) {
     for (let i of collection) {
       callback.call(i);
     }
@@ -215,19 +218,19 @@ class Orchestrator {
   moveSelected() {
     // for each selected instance
     // invoke manualMove method
-    this.forEachInstance(Shape.prototype.moveWithMouse, this.selectedInstances);
+    this.forEachInstance(Shape.prototype.moveWithMouse, this.selectedShapes);
   }
 
   modifyColorOnSelected() {
-    this.forEachInstance(Shape.prototype.changeColor, this.selectedInstances);
+    this.forEachInstance(Shape.prototype.changeColor, this.selectedShapes);
   }
 
   getSelection(x, y, radius=30) {
     // position = p5.Vector object
-    this.selectedInstances = [];
-    for (let i of this.instances) {
+    this.selectedShapes = [];
+    for (let i of this.shapes) {
       if (dist(i.pos.x, i.pos.y, x, y) <= radius) {
-        this.selectedInstances.push(i);
+        this.selectedShapes.push(i);
         // i.fill = color(10);  // for debugging
       }
     }
