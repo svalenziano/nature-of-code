@@ -64,9 +64,11 @@ function draw() {
   ShapeGroup.drawAll();
   if (mouseIsPressed) {
     o.moveSelected()
+    // ShapeGroup.moveSelected();
     o.modifyColorOnSelected();
   } else {
-    o.moveAll();
+    // o.moveAll();
+    ShapeGroup.moveAll();
   }
 
   // Draw cursor
@@ -149,7 +151,7 @@ class Colors {
 }
 
 class ShapeGroup {
-  static instances = [];
+  static shapeGroups = [];
 
   static createInstance(shapeQty, shapes, fill_initial, fill_modified) {
     let o = new ShapeGroup(
@@ -159,14 +161,18 @@ class ShapeGroup {
         fill_modified,
       )
     
-    this.instances.push(o);
+    this.shapeGroups.push(o);
     o. createShapes();
     return o;
   }
 
   static drawAll() {
-    Utils.forEachInstance(this.prototype.drawAll, this.instances);
+    Utils.forEachInstance(this.prototype.drawAllShapes, this.shapeGroups);
     // this.instances.forEach(this.prototype.drawAll)
+  }
+
+  static moveAll() {
+    Utils.forEachInstance(this.prototype.moveAllShapes, this.shapeGroups);
   }
   
   // Instance vars
@@ -184,7 +190,7 @@ class ShapeGroup {
       this.types = types;
       this.fill_initial = fill_initial;
       this.fill_modified = fill_modified;
-      ShapeGroup.instances.push(this);
+      ShapeGroup.shapeGroups.push(this);
   }
 
   createShapes() {
@@ -201,16 +207,16 @@ class ShapeGroup {
     this.shapes = [];
   }
 
-  drawAll() {
+  drawAllShapes() {
     Utils.forEachInstance(Shape.prototype.drawWrapper, this.shapes)
   }
 
-  moveAll() {
+  moveAllShapes() {
     Utils.forEachInstance(Shape.prototype.autoMove, this.shapes)
     Utils.forEachInstance(Shape.prototype.rotate, this.shapes)
   }
 
-  moveSelected() {
+  moveSelectedShapes() {
     // for each selected instance
     // invoke manualMove method
     Utils.forEachInstance(Shape.prototype.moveWithMouse, this.selectedShapes);
