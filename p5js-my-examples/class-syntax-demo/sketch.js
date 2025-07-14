@@ -64,7 +64,11 @@ function draw() {
 
 // EVENTS -------------------------------------------------------------
 function mousePressed() {
-  ShapeGroup.getSelection(mouseX, mouseY, myCursor.radius);
+  if (Help.visible) {
+    Help.hide();
+  } else {
+    ShapeGroup.getSelection(mouseX, mouseY, myCursor.radius);
+  }
 }
 
 function mouseWheel(event) {
@@ -119,6 +123,10 @@ class Help {
 
   static toggle() {
     this.visible = !this.visible;
+  }
+
+  static hide() {
+    this.visible = false;
   }
 }
 
@@ -370,7 +378,7 @@ class Shape {
 
   isOffScreen() {
     /* 
-    What is the role of `azimuth`?
+    What is the role of `movementDirection`?
       If shape starts off screen, you should not reset it immediately.
       CHOSEN METHOD: You must be able to tell if the shape is moving towards or away from the screen
       ALTERNATIVE: (Not used) You must track whether or not a shape has been on screen
@@ -470,11 +478,17 @@ class Cursor {
     cursor(CROSS);  // fallback, in case noCursor doesn't work
     noCursor();
 
+    if (!(mouseX < width && mouseX > 0 && mouseY > 0 && mouseY < height)) {
+      return
+    }
+    
     if (mouseIsPressed) {
       strokeWeight(this.strokeWeightHeavy);
     } else {
       strokeWeight(this.strokeWeightLight);
     }
+
+
     fill(this.fill);
     stroke(this.strokeColor);
     circle(mouseX, mouseY, this.diameter);
