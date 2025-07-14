@@ -60,17 +60,7 @@ function setup() {
 function draw() {
   background(220);
 
-  // Draw shapes
-  // o.drawAll();
   ShapeGroup.drawAll();
-  if (mouseIsPressed) {
-    o.moveSelected()
-    // ShapeGroup.moveSelected();
-    o.modifyColorOnSelected();
-  } else {
-    // o.moveAll();
-    ShapeGroup.moveAll();
-  }
 
   // Draw cursor
   cursor(CROSS);  // fallback, in case noCursor doesn't work
@@ -155,12 +145,13 @@ class ShapeGroup {
   static shapeGroups = [];
 
   static drawAll() {
-    Utils.forEachInstance(this.prototype.drawAllShapes, this.shapeGroups);
-    // this.instances.forEach(this.prototype.drawAll)
-  }
-
-  static moveAll() {
-    Utils.forEachInstance(this.prototype.moveAllShapes, this.shapeGroups);
+    Utils.each(this.prototype.drawAllShapes, this.shapeGroups);
+    if (mouseIsPressed) {
+      Utils.each(this.prototype.moveSelected, this.shapeGroups);
+      Utils.each(this.prototype.modifyColorOnSelected, this.shapeGroups);
+    } else {
+      Utils.each(this.prototype.moveAllShapes, this.shapeGroups);
+    }
   }
   
   // Instance vars
@@ -197,22 +188,22 @@ class ShapeGroup {
   }
 
   drawAllShapes() {
-    Utils.forEachInstance(Shape.prototype.drawWrapper, this.shapes)
+    Utils.each(Shape.prototype.drawWrapper, this.shapes)
   }
 
   moveAllShapes() {
-    Utils.forEachInstance(Shape.prototype.autoMove, this.shapes)
-    Utils.forEachInstance(Shape.prototype.rotate, this.shapes)
+    Utils.each(Shape.prototype.autoMove, this.shapes)
+    Utils.each(Shape.prototype.rotate, this.shapes)
   }
 
   moveSelected() {
     // for each selected instance
     // invoke manualMove method
-    Utils.forEachInstance(Shape.prototype.moveWithMouse, this.selectedShapes);
+    Utils.each(Shape.prototype.moveWithMouse, this.selectedShapes);
   }
 
   modifyColorOnSelected() {
-    Utils.forEachInstance(Shape.prototype.changeColor, this.selectedShapes);
+    Utils.each(Shape.prototype.changeColor, this.selectedShapes);
   }
 
   getSelection(x, y, radius=30) {
@@ -451,7 +442,7 @@ class Utils {
     return choices[idx];
   }
 
-  static forEachInstance(callback, collection) {
+  static each(callback, collection) {
     for (let i of collection) {
       callback.call(i);
     }
