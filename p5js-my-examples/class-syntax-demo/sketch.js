@@ -28,10 +28,12 @@ const CONFIGS = {
   JUMBO: {
     width: 1000,
     shapeCount: 400,
+    additionalCount: 200,
   },
   STANDARD: {
     width: 400,
     shapeCount: 100,
+    additionalCount: 40,
   },
 }
 // Select a config from the above configs
@@ -47,12 +49,7 @@ function setup() {
   createCanvas(CONFIG.width, CONFIG.width);
   frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
-  o = new ShapeGroup(
-    CONFIG.shapeCount, 
-    [Circle, Square],
-    Colors.INITIAL_SHAPE_COLOR,
-    Colors.MODIFIED_SHAPE_COLOR
-    )
+  ShapeGroup.createInitialGroup();
   myCursor = new Cursor();
 }
 
@@ -80,6 +77,10 @@ function keyPressed(event) {
     Help.toggle();
   } else if (event.code === 'Space') {
     ShapeGroup.reset();
+  } else if (event.code === 'KeyA') {
+    ShapeGroup.createAnotherGroup();
+  } else if (event.code === 'KeyS') {
+    ShapeGroup.pop();
   }
 }
 
@@ -95,12 +96,16 @@ class Help {
   Scroll up / down = Change size of the grabber
   
   Click = grab some shapes and move em around
+
+  A = add shapes
+
+  S = subtract shapes
   
   Spacebar = reset
   
   ENJOY!`
 
-  static visible = false;
+  static visible = true;
   
   static draw() { 
     if (this.visible) {
@@ -123,17 +128,42 @@ class Colors {
   static INITIAL_SHAPE_COLOR = 'rgba(255, 255, 255, 0.6)'
   static MODIFIED_SHAPE_COLOR = 'rgba(0, 0, 0, 0.8)';
 
-  static generateInitialColor() {
-    return'hsl(0, 87.20%, 75.50%)'
+  static randomHue() {
+    return Math.round(random(0, 359));
   }
 
-  static generateModifiedColor() {
-    return'hsl(0, 100.00%, 50.20%)'
+  static generateColorPair() {
+    let h = this.randomHue();
+    return [
+      `hsl(${h}, 10.00%, 75.00%)`,
+      `hsl(${h}, 60.00%, 50.00%)`
+    ];
   }
+
 }
 
 class ShapeGroup {
   static shapeGroups = [];
+
+  static createInitialGroup() {
+    new ShapeGroup(
+      CONFIG.shapeCount, 
+      [Circle, Square],
+      Colors.INITIAL_SHAPE_COLOR,
+      Colors.MODIFIED_SHAPE_COLOR
+    );
+  }
+
+  static createAnotherGroup() {
+    console.log("NEW GROUP CREATED!")
+    let newColor = Colors.generateColorPair();
+    new ShapeGroup(
+      CONFIG.additionalCount, 
+      Array(Utils.randomChoice([Circle, Square])),
+      newColor[0],
+      newColor[1],
+    );
+  }
 
   static drawAll() {
     this.shapeGroups.forEach((s) => s.drawAllShapes());
@@ -143,6 +173,10 @@ class ShapeGroup {
     } else {
       this.shapeGroups.forEach((s) => s.moveAllShapes())
     }
+  }
+
+  static pop() {
+    this.shapeGroups.pop();
   }
 
   static reset() {
@@ -178,6 +212,9 @@ class ShapeGroup {
     fill_initial=Colors.INITIAL_SHAPE_COLOR,
     fill_modified=Colors.MODIFIED_SHAPE_COLOR,
     ) {
+      if (!Array.isArray(types)) {
+        throw new Error('`types` argument must be an Array')
+      }
       this.qty = qty;
       this.types = types;
       this.fill_initial = fill_initial;
@@ -423,7 +460,7 @@ class Cursor {
   fill = Colors.CURSOR_FILL;
   strokeColor = Colors.CURSOR_STROKE;
   strokeWeightLight = 1.5;
-  strokeWeightHeavy = 3;
+  strokeWeightHeavy = 6;
 
   get radius() {
     return this.diameter / 2;
