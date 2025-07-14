@@ -1,5 +1,21 @@
 "use strict";
 
+/* 
+ABOUT THIS SKETCH
+
+- Press `Escape` for tips
+
+- GOAL: practice ES6 class syntax
+
+- Are you viewing this code in the p5 web editor? it seems that the web editor
+  does not support some recent ECMAScript syntax features, and as a result, it
+  erroneosly flags some code as problematic.  Workaround: use VSCode to view and
+  edit.
+
+
+
+*/
+
 
 // GLOBALS AND CONFIG ----------------------------------------------------------
 
@@ -22,15 +38,105 @@ const CONFIGS = {
 const CONFIG = CONFIGS.STANDARD;
 
 
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+//  SETUP AND LOOP -------------------------------------------------------------
+function setup() {
+  createCanvas(CONFIG.width, CONFIG.width);
+  frameRate(60);
+  CENTER_OF_SKETCH = createVector(width / 2, height / 2);
+  o = new Orchestrator();
+  myCursor = new Cursor();
+  o.createShapes(CONFIG.shapeCount, [Square, Circle]);
+}
+
+// MAIN LOOP -------------------------------------------------------------
+function draw() {
+  background(220);
+
+  // Draw shapes
+  o.drawAll();
+  if (mouseIsPressed) {
+    o.moveSelected()
+    o.modifyColorOnSelected();
+  } else {
+    o.moveAll();
+  }
+
+  // Draw cursor
+  cursor(CROSS);  // fallback, in case noCursor doesn't work
+  noCursor();
+  myCursor.draw();
+
+
+  Help.draw();
+}
+
+
+// EVENTS -------------------------------------------------------------
+function mousePressed() {
+  o.getSelection(mouseX, mouseY, myCursor.radius);
+}
+
+function mouseWheel(event) {
+  myCursor.changeDiameter(event.delta);
+}
+
+function keyPressed(event) {
+  console.log(event)
+  if (event.key === 'Escape') {
+    Help.toggle();
+  } else if (event.code === 'Space') {
+    // #LOA  --- RESET STUFF
+    o.clearShapes();
+    o.createShapes(CONFIG.shapeCount);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
 // CLASSES ---------------------------------------------------------------------
+
+class Help {
+  static MESSAGE_INTRO = `Esc = show/hide this help message
+  
+  Scroll up / down = Change size of the grabber
+  
+  Click = grab some shapes and move em around
+  
+  Spacebar = reset
+  
+  ENJOY!`
+
+  static visible = false;
+  
+  static draw() { 
+    if (this.visible) {
+      fill('rgba(255, 255, 255, 0.6)');
+      rect(-10, -10, width + 20, height + 20);
+      fill('rgb(0, 0, 0)');
+      noStroke();
+      text(this.MESSAGE_INTRO, 10, 10, width - 10, height - 10);
+    }
+  }
+
+  static toggle() {
+    this.visible = !this.visible;
+  }
+}
 
 class Orchestrator {
   // declare here (instead of in constructor) for easier IDE navigation
   instances = [];
   selectedInstances = [];
 
-  constructor() {
-    // nothing to see here
+  constructor(qty, types=[Circle]) {
+    this.qty = qty;
+    this.types = types;
   }
 
   createShapes(qty=100, types=[Circle]) {
@@ -40,6 +146,10 @@ class Orchestrator {
         this.instances.push(new Type());
       }
     })
+  }
+
+  clearShapes() {
+    this.instances = [];
   }
 
   forEachInstance(callback, collection=this.instances) {
@@ -117,6 +227,8 @@ class Shape {
   
   // these are actions that should happen with every call to `draw`
   // regardless of object type
+  // The actual instance shouldn't be modified in this method, just drawn!
+  // For instance modification, see `autoMove`, `rotate`, etc...
   drawWrapper() {
     push();
     fill(this.fill);
@@ -134,8 +246,6 @@ class Shape {
     scale(scaleFactor)
     this.draw();
     pop();
-    // this.move();
-    // this.rotate();
   }
 
   randomizeSpeed() {
@@ -143,7 +253,6 @@ class Shape {
   }
 
   randomizeRotation() {
-    // #LOA - figure out the math needed to scale the rotation so that larger object spin slower, but there's still enough variation to look good.
     this.rotationAzimuth = createVector(1, 1).rotate(random(0, 360));
     this.rotationSpeed = random(
       Shape.#MIN_ROTATION_SPEED, 
@@ -321,40 +430,5 @@ class Utils {
   }
 }
 
-// EVENTS -------------------------------------------------------------
-function mousePressed() {
-  o.getSelection(mouseX, mouseY, myCursor.radius);
-}
 
-function mouseWheel(event) {
-  myCursor.changeDiameter(event.delta);
-}
-
-
-
-
-//  SETUP AND LOOP -------------------------------------------------------------
-function setup() {
-  createCanvas(CONFIG.width, CONFIG.width);
-  frameRate(60);
-  CENTER_OF_SKETCH = createVector(width / 2, height / 2);
-  o = new Orchestrator();
-  myCursor = new Cursor();
-  o.createShapes(CONFIG.shapeCount, [Square, Circle]);
-}
-
-// MAIN LOOP -------------------------------------------------------------
-function draw() {
-  background(220);
-  o.drawAll();
-  if (mouseIsPressed) {
-    o.moveSelected()
-    o.modifyColorOnSelected();
-  } else {
-    o.moveAll();
-  }
-  cursor(CROSS);  // fallback, in case noCursor doesn't work
-  noCursor();
-  myCursor.draw();
-}
 
