@@ -47,7 +47,12 @@ function setup() {
   createCanvas(CONFIG.width, CONFIG.width);
   frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
-  o = new Orchestrator(CONFIG.shapeCount, [Square, Circle]);
+  o = new Orchestrator(
+    CONFIG.shapeCount, 
+    [Square, Circle], 
+    Colors.INITIAL_SHAPE_COLOR, 
+    Colors.MODIFIED_SHAPE_COLOR
+    );
   myCursor = new Cursor();
   o.createShapes();
 }
@@ -145,20 +150,32 @@ class Colors {
 }
 
 class Orchestrator {
+  static instances = [];
+  
+  // Instance vars
   // declare here (instead of in constructor) for easier IDE navigation
   instances = [];
   selectedInstances = [];
 
-  constructor(qty, types=[Circle]) {
-    this.qty = qty;
-    this.types = types;
+  constructor(
+    qty, 
+    types=[Circle], 
+    fill_initial=Colors.INITIAL_SHAPE_COLOR,
+    fill_modified=Colors.MODIFIED_SHAPE_COLOR,
+    ) {
+      this.qty = qty;
+      this.types = types;
+      this.fill_initial = fill_initial;
+      this.fill_modified = fill_modified;
+      Orchestrator.instances.push(this);
   }
 
   createShapes() {
+    console.log(this.fill_initial)
     let qtyPerType = Math.ceil(this.qty / this.types.length)
     this.types.forEach((Type) => {
       for (let i = 0; i < qtyPerType; i++) {
-        this.instances.push(new Type());
+        this.instances.push(new Type(this.fill_initial, this.fill_modified));
       }
     })
   }
@@ -221,20 +238,20 @@ class Shape {
   static #MIN_ROTATION_SPEED = 0.01;
 
   // Colors
-  static #COLOR_INITIAL = Colors.INITIAL_SHAPE_COLOR;
-  static #COLOR_MODIFIED = Colors.MODIFIED_SHAPE_COLOR;
 
   // "public class field" (these become instance properties)
   strokeWeight = 0.5;
   strokeColor = color(10);
   pos = createVector(CENTER_OF_SKETCH.x, CENTER_OF_SKETCH.y);
-  fill = Shape.#COLOR_INITIAL;
 
   static randomSize() {
     return random(Shape.#MIN_SIZE, Shape.#MAX_SIZE);
   }
 
-  constructor() {
+  constructor(fill_initial, fill_modified) {
+    this.fill_initial = fill_initial;
+    this.fill_modified = fill_modified;
+    this.fill = fill_initial;
     this.resetPosition();
     this.randomizeSpeed()
     this.movementDirection = createVector(1, 1).rotate(random(0, 360));
@@ -349,13 +366,13 @@ class Shape {
   }
 
   changeColor() {
-    this.fill = Shape.#COLOR_MODIFIED;
+    this.fill = this.fill_modified;
   }
 }
 
 class Circle extends Shape {
-  constructor(diameter = -1) {
-    super();
+  constructor(fill_initial, fill_modified, diameter = -1) {
+    super(fill_initial, fill_modified);
     this.initializeDiameter(diameter);
     
   }
@@ -375,8 +392,8 @@ class Circle extends Shape {
 
 class Square extends Shape {
   
-  constructor() {
-    super();
+  constructor(fill_initial, fill_modified) {
+    super(fill_initial, fill_modified);
     this.size = Shape.randomSize();
     this.randomizeRotation();
     // drawOrigin makes it easy to draw square 'from the center'
