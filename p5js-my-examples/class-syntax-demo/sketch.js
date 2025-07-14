@@ -67,7 +67,7 @@ function draw() {
 
 // EVENTS -------------------------------------------------------------
 function mousePressed() {
-  o.getSelection(mouseX, mouseY, myCursor.radius);
+  ShapeGroup.getSelection(mouseX, mouseY, myCursor.radius);
 }
 
 function mouseWheel(event) {
@@ -79,9 +79,7 @@ function keyPressed(event) {
   if (event.key === 'Escape') {
     Help.toggle();
   } else if (event.code === 'Space') {
-    // #LOA  --- RESET STUFF
-    o.clearShapes();
-    o.createShapes();
+    ShapeGroup.reset();
   }
 }
 
@@ -146,6 +144,28 @@ class ShapeGroup {
       this.shapeGroups.forEach((s) => s.moveAllShapes())
     }
   }
+
+  static reset() {
+    this.shapeGroups = [];
+    new ShapeGroup(
+      CONFIG.shapeCount, 
+      [Circle, Square],
+      Colors.INITIAL_SHAPE_COLOR,
+      Colors.MODIFIED_SHAPE_COLOR
+    );
+  }
+
+  static getSelection(x, y, radius=30) {
+    for (let group of this.shapeGroups) {
+      group.selectedShapes = [];
+      for (let shape of group.shapes) {
+        if (dist(shape.pos.x, shape.pos.y, x, y) <= radius) {
+          group.selectedShapes.push(shape);
+          // i.fill = color(10);  // for debugging
+        }
+      }
+    }
+  }
   
   // Instance vars
   // declare here (instead of in constructor) for easier IDE navigation
@@ -200,7 +220,6 @@ class ShapeGroup {
   }
 
   getSelection(x, y, radius=30) {
-    // position = p5.Vector object
     this.selectedShapes = [];
     for (let i of this.shapes) {
       if (dist(i.pos.x, i.pos.y, x, y) <= radius) {
