@@ -59,15 +59,8 @@ function setup() {
 // MAIN LOOP -------------------------------------------------------------
 function draw() {
   background(220);
-
   ShapeGroup.drawAll();
-
-  // Draw cursor
-  cursor(CROSS);  // fallback, in case noCursor doesn't work
-  noCursor();
   myCursor.draw();
-
-
   Help.draw();
 }
 
@@ -145,12 +138,12 @@ class ShapeGroup {
   static shapeGroups = [];
 
   static drawAll() {
-    Utils.each(this.prototype.drawAllShapes, this.shapeGroups);
+    this.shapeGroups.forEach((s) => s.drawAllShapes());
     if (mouseIsPressed) {
-      Utils.each(this.prototype.moveSelected, this.shapeGroups);
-      Utils.each(this.prototype.modifyColorOnSelected, this.shapeGroups);
+      this.shapeGroups.forEach((s) => s.moveSelected());
+      this.shapeGroups.forEach((s) => s.modifyColorOnSelected());
     } else {
-      Utils.each(this.prototype.moveAllShapes, this.shapeGroups);
+      this.shapeGroups.forEach((s) => s.moveAllShapes())
     }
   }
   
@@ -188,22 +181,22 @@ class ShapeGroup {
   }
 
   drawAllShapes() {
-    Utils.each(Shape.prototype.drawWrapper, this.shapes)
+    this.shapes.forEach((shape) => shape.drawWrapper());
   }
 
   moveAllShapes() {
-    Utils.each(Shape.prototype.autoMove, this.shapes)
-    Utils.each(Shape.prototype.rotate, this.shapes)
+    this.shapes.forEach((shape) => {
+      shape.autoMove();
+      shape.rotate();
+    })
   }
 
   moveSelected() {
-    // for each selected instance
-    // invoke manualMove method
-    Utils.each(Shape.prototype.moveWithMouse, this.selectedShapes);
+    this.selectedShapes.forEach((shape) => shape.moveWithMouse())
   }
 
   modifyColorOnSelected() {
-    Utils.each(Shape.prototype.changeColor, this.selectedShapes);
+    this.selectedShapes.forEach((shape) => shape.changeColor());
   }
 
   getSelection(x, y, radius=30) {
@@ -418,6 +411,9 @@ class Cursor {
   }
 
   draw() {
+    cursor(CROSS);  // fallback, in case noCursor doesn't work
+    noCursor();
+
     if (mouseIsPressed) {
       strokeWeight(this.strokeWeightHeavy);
     } else {
@@ -440,12 +436,6 @@ class Utils {
   static randomChoice(choices) {
     let idx = Math.floor(Math.random() * choices.length);
     return choices[idx];
-  }
-
-  static each(callback, collection) {
-    for (let i of collection) {
-      callback.call(i);
-    }
   }
   
   // TESTS
