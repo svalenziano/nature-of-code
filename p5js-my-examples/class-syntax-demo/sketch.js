@@ -47,11 +47,12 @@ function setup() {
   createCanvas(CONFIG.width, CONFIG.width);
   frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
-  o = ShapeGroup.createInstance(
+  o = new ShapeGroup(
     CONFIG.shapeCount, 
-    [Square, Circle],
+    [Circle, Square],
     Colors.INITIAL_SHAPE_COLOR,
-    Colors.MODIFIED_SHAPE_COLOR)
+    Colors.MODIFIED_SHAPE_COLOR
+    )
   myCursor = new Cursor();
 }
 
@@ -153,19 +154,6 @@ class Colors {
 class ShapeGroup {
   static shapeGroups = [];
 
-  static createInstance(shapeQty, shapes, fill_initial, fill_modified) {
-    let o = new ShapeGroup(
-        shapeQty ?? CONFIG.shapeCount, 
-        shapes ?? [Square, Circle], 
-        fill_initial, 
-        fill_modified,
-      )
-    
-    this.shapeGroups.push(o);
-    o. createShapes();
-    return o;
-  }
-
   static drawAll() {
     Utils.forEachInstance(this.prototype.drawAllShapes, this.shapeGroups);
     // this.instances.forEach(this.prototype.drawAll)
@@ -191,6 +179,7 @@ class ShapeGroup {
       this.fill_initial = fill_initial;
       this.fill_modified = fill_modified;
       ShapeGroup.shapeGroups.push(this);
+      this.createShapes();
   }
 
   createShapes() {
@@ -216,7 +205,7 @@ class ShapeGroup {
     Utils.forEachInstance(Shape.prototype.rotate, this.shapes)
   }
 
-  moveSelectedShapes() {
+  moveSelected() {
     // for each selected instance
     // invoke manualMove method
     Utils.forEachInstance(Shape.prototype.moveWithMouse, this.selectedShapes);
