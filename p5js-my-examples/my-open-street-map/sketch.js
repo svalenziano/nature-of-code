@@ -4,38 +4,57 @@ class TestCoordinates {
   }
 }
 
-let data = null;
 const coords = TestCoordinates.coords.Taipei;
 const [latMin, longMin, latMax, longMax] = coords;
 
 function setup() {
-    createCanvas(800, 800);
-    background(245);
-    let overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];(way["building"](${coords.join(",")}););out%20geom;`;
-    console.log(overpassUrl);
-    data = loadJSON(overpassUrl, gotData);
-    noFill();
-    strokeWeight(0.5);
-    frameRate(5);
+  createCanvas(800, 800);
+  background(240);
+  noFill();
+  strokeWeight(0.5);
+  console.log("loading...")
+  renderTile(coords); 
 }
 
 function draw() {
-
-    if (data["elements"]) {
-        data["elements"].forEach(building => {
-            beginShape();
-            building["geometry"].forEach(p => {
-                let y = map(p.lat, latMin, latMax, height, 0);
-                let x = map(p.lon, longMin, longMax, 0, width);
-                vertex(x, y);
-            })
-            endShape(CLOSE);
-        })
-        noLoop();
-    }
+  // nothing yet
 }
 
+async function renderTile(coords) {
+  try {
+    const coordString = coords.join(",")
+    const osmQuery = "data=" + encodeURIComponent(`
+        [bbox:${coordString}][out:json][timeout:90];
+        (
+          way["building"](${coordString});
+        );
+        out geom;`);
 
-function gotData() {
-    console.log("got data");
+    const response = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: osmQuery,
+    });
+
+    const json = await response.json();
+    console.log(json);
+
+    // debug truncate
+    // json.elements = json.elements.slice(0, 300);
+
+    json.elements.forEach((building) => {
+      beginShape();
+      building.geometry.forEach((point) => {
+        let y = map(point.lat, latMin, latMax, height, 0);
+        let x = map(point.lon, longMin, longMax, 0, width);
+        vertex(x, y);
+      });
+      endShape(CLOSE);
+    });
+
+  } catch (error) {
+    console.error(error);
+  }
+
+
+
 }
