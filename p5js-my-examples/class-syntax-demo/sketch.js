@@ -5,7 +5,7 @@ ABOUT THIS SKETCH
 
 - Press `Escape` for help
 
-- GOAL: practice ES6 class syntax
+- GOAL: practice ES6 class syntax, context
 
 - Are you viewing this code in the p5 web editor? it seems that the web editor
   does not support some recent ECMAScript syntax features, and as a result, it
@@ -20,24 +20,29 @@ ABOUT THIS SKETCH
 // GLOBALS AND CONFIG ----------------------------------------------------------
 
 let CENTER_OF_SKETCH;
-let o;  // orchestrator instance
 let myCursor;
 
-
 const CONFIGS = {
-  JUMBO: {
-    width: 1000,
+  LARGE: {
+    width: 1100,
+    height: 700,
     shapeCount: 400,
     additionalCount: 200,
   },
-  STANDARD: {
+  MEDIUM: {
+    width: 680,
+    height: 400,
+    shapeCount: 125,
+    additionalCount: 60,
+  },
+  SMALL: {
     width: 400,
     shapeCount: 100,
     additionalCount: 40,
   },
 }
 // Select a config from the above configs
-const CONFIG = CONFIGS.STANDARD;
+const CONFIG = CONFIGS.MEDIUM;
 
 
 
@@ -46,7 +51,7 @@ const CONFIG = CONFIGS.STANDARD;
 
 //  SETUP AND LOOP -------------------------------------------------------------
 function setup() {
-  createCanvas(CONFIG.width, CONFIG.width);
+  createCanvas(CONFIG.width, CONFIG.height ?? CONFIG.width);
   frameRate(60);
   CENTER_OF_SKETCH = createVector(width / 2, height / 2);
   ShapeGroup.createInitialGroup();
@@ -76,7 +81,6 @@ function mouseWheel(event) {
 }
 
 function keyPressed(event) {
-  console.log(event)
   if (event.key === 'Escape') {
     Help.toggle();
   } else if (event.code === 'Space') {
@@ -101,7 +105,7 @@ class Help {
   
   Click = grab some shapes and move em around
 
-  A = add shapes
+  A = add shapes (random shape and color)
 
   S = subtract shapes
   
@@ -156,18 +160,17 @@ class ShapeGroup {
   static createInitialGroup() {
     new ShapeGroup(
       CONFIG.shapeCount, 
-      [Circle, Square],
+      [Circle, Square, Triangle],
       Colors.INITIAL_SHAPE_COLOR,
       Colors.MODIFIED_SHAPE_COLOR
     );
   }
 
   static createAnotherGroup() {
-    console.log("NEW GROUP CREATED!")
     let newColor = Colors.generateColorPair();
     new ShapeGroup(
       CONFIG.additionalCount, 
-      Array(Utils.randomChoice([Circle, Square])),
+      Array(Utils.randomChoice([Circle, Square, Triangle])),
       newColor[0],
       newColor[1],
     );
@@ -284,12 +287,12 @@ class Shape {
   static #MAX_SIZE = 50;
 
   // Speed Unit = pixels per frame
-  static #MIN_SPEED = 0.1;
-  static #MAX_SPEED = 0.5;
+  static #MIN_SPEED = 0.07;
+  static #MAX_SPEED = 0.35;
 
   // Rotation Unit = degrees per frame
-  static #MAX_ROTATION_SPEED = 0.05;
-  static #MIN_ROTATION_SPEED = 0.01;
+  static #MAX_ROTATION_SPEED = 0.03;
+  static #MIN_ROTATION_SPEED = 0.005;
 
   // Colors
 
@@ -459,6 +462,24 @@ class Square extends Shape {
   }
 }
 
+class Triangle extends Shape {
+  
+  constructor(fill_initial, fill_modified) {
+    super(fill_initial, fill_modified);
+    this.size = Shape.randomSize();
+    this.randomizeRotation();
+  }
+
+  draw() {
+    let s = this.size;
+    triangle(
+       0,            -s * sqrt(3) / 3,
+      -s/2,           s * sqrt(3) / 6,
+       s/2,           s * sqrt(3) / 6
+    );
+  }
+}
+
 class Cursor {
   static #MAX_DIAMETER = CONFIG.width / 1.5;
   static #MIN_DIAMETER = 15;
@@ -481,7 +502,7 @@ class Cursor {
     if (!(mouseX < width && mouseX > 0 && mouseY > 0 && mouseY < height)) {
       return
     }
-    
+
     if (mouseIsPressed) {
       strokeWeight(this.strokeWeightHeavy);
     } else {
@@ -516,11 +537,11 @@ class Utils {
     for (let i = 0; i < trials; i++) {
       let t = Utils.randomChoice(choices);
       result.push(t);
-      console.log(t);
+      // console.log(t);
     }
 
     let sum = result.reduce((accum, v) => accum + v);
-    console.log(`Result: ${sum} of ${trials}`)
+    // console.log(`Result: ${sum} of ${trials}`)
   }
 }
 
