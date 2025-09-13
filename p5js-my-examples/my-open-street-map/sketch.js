@@ -1,6 +1,7 @@
 class TestCoordinates {
   static coords = {
-    Taipei: [25.029928, 121.470337, 25.054501, 121.499004]
+    Taipei: [25.029928, 121.470337, 25.054501, 121.499004],
+    Durham: [35.985577, -78.913336, 36.004673, -78.888788],
   }
 }
 
@@ -16,13 +17,13 @@ const myQueries = {
   industrial: `wr["landuse"~"industrial|quarry|brownfield|military|logging|landfill"]`
 }
 
-const coords = TestCoordinates.coords.Taipei;
+const coords = TestCoordinates.coords.Durham;
 const [latMin, longMin, latMax, longMax] = coords;
 
 function setup() {
   createCanvas(800, 800);
   background(240);
-  noFill();
+  // noFill();
   strokeWeight(0.5);
   console.log("loading...")
   renderTile(coords); 
@@ -30,6 +31,10 @@ function setup() {
 
 function draw() {
   // nothing yet
+}
+
+async function fetchLayer(coords, query) {
+  
 }
 
 async function renderTile(coords) {
@@ -54,15 +59,15 @@ async function renderTile(coords) {
     // json.elements = json.elements.slice(0, 300);
 
     json.elements.forEach((object) => {
-      beginShape();
       if (object.type === "way") {
-        object.geometry.forEach((point) => {
-          let y = map(point.lat, latMin, latMax, height, 0);
-          let x = map(point.lon, longMin, longMax, 0, width);
-          vertex(x, y);
-        });
+        drawGeometry(object.geometry, {latMin, longMin, latMax, longMax});
+      } else if (object.type === "relation") {
+        object.members.forEach((member) => {
+          if (member.type === "way") {
+            drawGeometry(member.geometry, {latMin, longMin, latMax, longMax});
+          }
+        })
       }
-      endShape();
     });
 
   } catch (error) {
@@ -71,4 +76,27 @@ async function renderTile(coords) {
 
 
 
+}
+
+function drawGeometry(geoArray, {latMin, longMin, latMax, longMax}, fillColor=255) {
+  /*
+  EXPECTED INPUT = ARRAY:
+      [
+         { "lat": 35.9945128, "lon": -78.9050525 },
+         { "lat": 35.9945023, "lon": -78.9050263 },
+         ...
+      ]
+  */
+  beginShape();
+  if (fillColor) {
+    fill(fillColor);
+  } else {
+    noFill();
+  }
+  geoArray.forEach((point) => {
+    let y = map(point.lat, latMin, latMax, height, 0);
+    let x = map(point.lon, longMin, longMax, 0, width);
+    vertex(x, y);
+  });
+  endShape();
 }
