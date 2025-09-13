@@ -4,14 +4,16 @@ class TestCoordinates {
   }
 }
 
+const TIMEOUT = 6;  // unit = seconds
+
 const myQueries = {
-  buildings: `wr["building"]({{bbox}});`,
-  roads: `wr["highway"~"motorway|motorway_link|trunk|primary|secondary|tertiary|residential|service"]({{bbox}});`,
+  building: `wr["building"];`,
+  road: `wr["highway"~"motorway|motorway_link|trunk|primary|secondary|tertiary|residential|service"];`,
   green_space: `
-    wr["leisure"="park"]({{bbox}});
-    wr["landuse"="grass"]({{bbox}});
-    wr["landuse"="grass"]({{bbox}});
-    wr["leisure"="garden"]({{bbox}});`,
+    wr["leisure"~"park|garden"];
+    wr["landuse"~"grass|forest|meadow|orchard"];`,
+  farm: `wr["landuse"~"farmyard|vineyard"]`,
+  industrial: `wr["landuse"~"industrial|quarry|brownfield|military|logging|landfill"]`
 }
 
 const coords = TestCoordinates.coords.Taipei;
@@ -34,18 +36,9 @@ async function renderTile(coords) {
   try {
     const coordString = coords.join(",")
     const osmQuery = "data=" + encodeURIComponent(`
-        [bbox:${coordString}][out:json][timeout:90];
+        [bbox:${coordString}][out:json][timeout:${TIMEOUT}];
         (
-          way["building"](${coordString});
-          way["building:levels"](${coordString});
-          way["highway"](${coordString});
-          way["surface"](${coordString});
-          way["natural"](${coordString});
-          way["waterway"](${coordString});
-          way["power"](${coordString});
-          way["service"](${coordString});
-          way["access"](${coordString});
-          way["wall"](${coordString});
+          ${myQueries.building}
         );
         out geom;`);
 
@@ -60,13 +53,15 @@ async function renderTile(coords) {
     // debug truncate
     // json.elements = json.elements.slice(0, 300);
 
-    json.elements.forEach((building) => {
+    json.elements.forEach((object) => {
       beginShape();
-      building.geometry.forEach((point) => {
-        let y = map(point.lat, latMin, latMax, height, 0);
-        let x = map(point.lon, longMin, longMax, 0, width);
-        vertex(x, y);
-      });
+      if (object.type === "way") {
+        object.geometry.forEach((point) => {
+          let y = map(point.lat, latMin, latMax, height, 0);
+          let x = map(point.lon, longMin, longMax, 0, width);
+          vertex(x, y);
+        });
+      }
       endShape();
     });
 
