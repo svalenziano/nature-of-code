@@ -4,6 +4,16 @@ class TestCoordinates {
   }
 }
 
+const myQueries = {
+  buildings: `wr["building"]({{bbox}});`,
+  roads: `wr["highway"~"motorway|motorway_link|trunk|primary|secondary|tertiary|residential|service"]({{bbox}});`,
+  green_space: `
+    wr["leisure"="park"]({{bbox}});
+    wr["landuse"="grass"]({{bbox}});
+    wr["landuse"="grass"]({{bbox}});
+    wr["leisure"="garden"]({{bbox}});`,
+}
+
 const coords = TestCoordinates.coords.Taipei;
 const [latMin, longMin, latMax, longMax] = coords;
 
@@ -27,6 +37,15 @@ async function renderTile(coords) {
         [bbox:${coordString}][out:json][timeout:90];
         (
           way["building"](${coordString});
+          way["building:levels"](${coordString});
+          way["highway"](${coordString});
+          way["surface"](${coordString});
+          way["natural"](${coordString});
+          way["waterway"](${coordString});
+          way["power"](${coordString});
+          way["service"](${coordString});
+          way["access"](${coordString});
+          way["wall"](${coordString});
         );
         out geom;`);
 
@@ -48,7 +67,7 @@ async function renderTile(coords) {
         let x = map(point.lon, longMin, longMax, 0, width);
         vertex(x, y);
       });
-      endShape(CLOSE);
+      endShape();
     });
 
   } catch (error) {
