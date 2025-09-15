@@ -1,3 +1,11 @@
+"use strict";
+
+/*
+Written by Steven Valenziano in 2025 to practice working with DOM manipulation, events, asynchronous programming, network requests (via fetch), with a sprinkling of pre-ES6 syntax just for giggles.
+
+Dependencies: p5js library
+*/
+
 class TestCoordinates {
   static coords = {
     Taipei: [25.029928, 121.470337, 25.054501, 121.499004],
@@ -6,6 +14,7 @@ class TestCoordinates {
 }
 
 const TIMEOUT = 6;  // unit = seconds
+let done = false;
 
 const myQueries = {
   building: `wr["building"];`,
@@ -20,30 +29,43 @@ const myQueries = {
 const coords = TestCoordinates.coords.Durham;
 const [latMin, longMin, latMax, longMax] = coords;
 
-function setup() {
+async function setup() {
   createCanvas(800, 800);
   background(240);
   // noFill();
   strokeWeight(0.5);
   console.log("loading...")
-  renderTile(coords); 
+  // renderTile(coords, await fetchLayer(coords, [myQueries.building]));
+  setupListeners();
+  console.log("Setup is complete!")
 }
 
+// From what  I can tell, `draw` is always executed synchronously, regardless of `async` keyword
 function draw() {
-  // nothing yet
+  // Intentionally left blank
+  // No `draw` loop is needed
 }
 
-async function fetchLayer(coords, query) {
-  
+function setupListeners() {
+  document.body.addEventListener("click", async (ev) => {
+    console.log("Fetching data...")
+    renderTile(coords, await fetchLayer(coords, [myQueries.building]));
+  })
+  console.log("Click to load: setup complete.");
 }
 
-async function renderTile(coords) {
+async function fetchLayer(coords, queries) {
+  /*
+  coords: OSM-formatted array of coords, eg [25.029928, 121.470337, 25.054501, 121.499004]
+  queries: array of one or more Overpass API queries eg [`wr["building"];`, `wr["landuse"];`]
+  Return: json API response
+  */
   try {
     const coordString = coords.join(",")
     const osmQuery = "data=" + encodeURIComponent(`
         [bbox:${coordString}][out:json][timeout:${TIMEOUT}];
         (
-          ${myQueries.building}
+          ${queries.join('')}
         );
         out geom;`);
 
@@ -53,11 +75,15 @@ async function renderTile(coords) {
     });
 
     const json = await response.json();
-    console.log(json);
+    return json;
 
-    // debug truncate
-    // json.elements = json.elements.slice(0, 300);
+  } catch (error) {
+    console.log("Fetch from OSM failed");
+    throw error;
+  }
+}
 
+function renderTile([latMin, longMin, latMax, longMax], json) {
     json.elements.forEach((object) => {
       if (object.type === "way") {
         drawGeometry(object.geometry, {latMin, longMin, latMax, longMax});
@@ -70,9 +96,7 @@ async function renderTile(coords) {
       }
     });
 
-  } catch (error) {
-    console.error(error);
-  }
+  
 
 
 
@@ -99,4 +123,54 @@ function drawGeometry(geoArray, {latMin, longMin, latMax, longMax}, fillColor=25
     vertex(x, y);
   });
   endShape();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Slow Fetcher
+// Written in pre-ES6 syntax
+// There are more robust methods of throttling, but this does the trick for now
+
+/*
+  Since fetch is async and request may be resolved or rejected IN ANY ORDER (not the order that they were made), you must use a 'token-based' system rather than a linear data structure such as a queue.
+  
+  V1
+    IDEA: use Promise.withResolvers() to create a remote-controlled Promise.  Fetching is handled on a timer, and results / errors are resolved to the original promise
+    ALGO
+      FETCH
+        If timer is null, the request can be made immediately
+        Else:
+          - make a promise (to make a request in the future) using `Promise.withResolvers`
+          - enqueue object: {resolver, rejector, url, options}
+          - schedule the "future fetch" => create `processQueue` (helper) timer using setInterval
+          - return the promise so that this function can be used identically to built-in `fetch`
+      
+      processQueue (HELPER callback for setInterval)
+        - on timeout (execute every X milliseconds):
+          - if queue has elements:
+            - await: fetch and get json from response
+            - if response, resolve the original promise
+            - if error, reject
+          - else:
+            - clearInterval
+
+  V2
+    IDEA: use all.Settled to create a remote-controlled promise? I don't think this is possible.
+*/
+
+function SlowFetcher (interval) {
+  if (!(this instanceof SlowFetcher)) {
+    return new SlowFetcher(...Array.from(arguments));
+  }
+  this.queue = [];
+  this.interval = interval;  // Minimum interval between requests.  unit = milliseconds
+  this.timer = null;
+  
+}
+
+SlowFetcher.prototype.enqueueFetch = function (url, option) {
+  if (this.timer) {
+    this.queue.push({url, option});
+  } else {
+  }
 }
