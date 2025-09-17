@@ -65,6 +65,160 @@ class SlowFetcher {
   }
 }
 
+class Layer {
+  /*
+  keysAndTags = JS object: `{building: null, leisure: [park, garden], landuse: [grass, forest, meadow, orchard]}` where `null` represents ALL tags for that key
+  */
+  static hashKeyTag(key, tag) {
+    return `${key}:${tag}`;
+  }
+
+  constructor({name, keysAndTags}) {
+    this.name = name;
+    this.keysAndTags = keysAndTags;
+    this.elements = [];
+
+    Object.values(keysAndTags).forEach((tag) => {
+      if (tag !== null && !Array.isArray(tag)) {
+        throw new Error("tag must be `null` or Array");
+      }
+    })
+  }
+
+  addElements(elements) {
+    this.elements.push(elements);
+  }
+
+  get queryString() {
+    let string = "";
+    for (const key in this.keysAndTags) {
+      const tags = this.keysAndTags[key];
+      if (tags === null) {
+        string += `wr["${key}"];`;
+      } else if (tags.length > 1) {
+        string += `wr["${key}"~"${tags.join("|")}"];`;
+      } else {
+        string += `wr["${key}"="${tags[0]}"];`;
+      }
+    }
+    return string;
+  }
+
+  get dispatchHash() {
+    /*
+    Input: none (use this.keysAndTags)
+    Return: object eg {"building": this} or {"leisure:park": this, "leisure:garden": this}
+    */
+    const result = {};
+    for (const key in this.keysAndTags) {
+      const tags = this.keysAndTags[key];
+      if (tags === null) {
+        result[key] = this;
+      } else {
+        tags.forEach((tag) => {
+          result[Layer.hashKeyTag(key, tag)] = this;
+        })
+      }
+    }
+    return result;
+  }
+}
+
+/*
+Map contains and orchestrates Layers
+*/
+class StreetMap {
+
+  static defaultLayers = [
+    { 
+      name: "Buildings",
+      keysAndTags: {
+        building: null,
+      },
+    },
+    {
+      name: "Green Space",
+      keysAndTags: {
+        leisure: ["park", "garden"],
+        landuse: ["grass"],
+      },
+    }
+  ];
+
+  constructor(coords) {
+    this.coords = coords;
+    this.latMin = coords[0];
+    this.longMin = coords[1];
+    this.latMax = coords[2];
+    this.longMax = coords[3];
+
+    this.layers = [];
+    this.dispatchHash = {};
+
+    this.populateDefaultLayers();
+    this.updateDispatchHash();
+  }
+
+  async init() {
+    const data = await this.fetchlayers();
+    console.log(data);
+    // dispatch fetched data to layer objects
+    /*
+      - For each element in json
+        - check for match between keys and tags
+        - push the element to the appropriate layer
+    */
+
+    // draw layers
+
+  }
+
+  get coordString() {
+    return this.coords.join(",");
+  }
+
+  updateDispatchHash() {
+    this.layers.forEach((layer) => {
+      Object.assign(this.dispatchHash, layer.dispatchHash);
+    })
+  }
+
+  populateDefaultLayers() {
+    for (const l of StreetMap.defaultLayers) {
+      this.layers.push(new Layer(l));
+    }
+  }
+
+  async fetchlayers(layerNames=[]) {
+    /*
+    Input: layers to fetch data for.  Default = use this.layers
+    Return: JSON response
+    parse response and populate each layer with elements
+    */
+    let query = "";
+    if (layerNames.length === 0) {
+      for (const layer of this.layers) {
+        query += layer.queryString;
+      }
+
+      const osmQuery = "data=" + encodeURIComponent(`
+          [bbox:${this.coordString}][out:json][timeout:${TIMEOUT}];
+          (${query});
+          out geom;`);
+
+      const response = await osmFetcher.fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: osmQuery,
+      });
+
+      const json = await response.json();
+      return json;
+
+    } else {
+      throw new Error("NOT YET IMPLEMENTED")
+    }
+  }
+}
 
 function setupListeners() {
   document.body.addEventListener("click", async (ev) => {
@@ -146,6 +300,7 @@ const coords = TestCoordinates.coords.Durham;
 
 const osmFetcher = new SlowFetcher(REQUEST_DELAY);
 const [latMin, longMin, latMax, longMax] = coords;
+let map;
 
 async function setup() {
   createCanvas(800, 800);
@@ -154,7 +309,9 @@ async function setup() {
   strokeWeight(0.5);
   console.log("loading...")
   // renderTile(coords, await fetchLayer(coords, [myQueries.building]));
-  setupListeners();
+  // setupListeners();
+  map = new StreetMap(coords);
+  await map.init();
   console.log("Setup is complete!")
 }
 
