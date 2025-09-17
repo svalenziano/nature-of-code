@@ -85,8 +85,12 @@ class Layer {
     })
   }
 
-  addElements(elements) {
-    this.elements.push(elements);
+  addElement(element) {
+    /*
+    Input = element from OSM json response
+    Side effect = mutate this.elements
+    */
+    this.elements.push(element);
   }
 
   get queryString() {
@@ -160,15 +164,40 @@ class StreetMap {
   }
 
   async init() {
-    const data = await this.fetchlayers();
-    console.log(data);
+    const json = await this.fetchlayers();
+    console.log(json);
     // dispatch fetched data to layer objects
     /*
+      - orphans = []
       - For each element in json
-        - check for match between keys and tags
-        - push the element to the appropriate layer
+        - for each key in the KEYS of this.dispatchHash:
+          - if key & value of the dispatchHash (eg "building" or "leisure:park") matches the element key + value combo:
+            - push the element to the appropriate layer
+        - else push to `orphans`
     */
-
+    const orphans = [];
+    for (const element of json.elements) {
+      const found = false;
+      for (const entry in this.dispatchHash) {
+        if (!entry.includes(":") && Object.keys(element.tags).includes(entry)) {
+          const layer = this.dispatchHash[entry];
+          layer.addElement(element);
+        } else {
+          const [key, tag] = entry.split(":");
+          if (element['tags'][key] === tag) {
+            const layer = this.dispatchHash[entry];
+            layer.addElement(element);
+          }
+        }
+      }
+      if (!found) {
+        orphans.push(element);
+      }
+    }
+    if (orphans) {
+      console.log("Warning: orphans!");
+      console.log(orphans);
+    }
     // draw layers
 
   }
