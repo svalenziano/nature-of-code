@@ -166,18 +166,23 @@ class StreetMap {
   async init() {
     const json = await this.fetchlayers();
     console.log(json);
-    // dispatch fetched data to layer objects
+    this.dispatchToLayer(json);
+    // draw layers
+      // tktk
+  }
+
+  dispatchToLayer(json) {
     /*
-      - orphans = []
-      - For each element in json
-        - for each key in the KEYS of this.dispatchHash:
-          - if key & value of the dispatchHash (eg "building" or "leisure:park") matches the element key + value combo:
-            - push the element to the appropriate layer
-        - else push to `orphans`
+    Input: json response from OSM
+    Side effects: 
+      1) Warn if orphans are found
+      2) Dispatch elements from json to each Layer
     */
     const orphans = [];
+
     for (const element of json.elements) {
-      const found = false;
+      const layerFound = false;
+
       for (const entry in this.dispatchHash) {
         if (!entry.includes(":") && Object.keys(element.tags).includes(entry)) {
           const layer = this.dispatchHash[entry];
@@ -190,16 +195,14 @@ class StreetMap {
           }
         }
       }
-      if (!found) {
+      if (!layerFound) {
         orphans.push(element);
       }
     }
     if (orphans) {
-      console.log("Warning: orphans!");
+      console.log("Warning: layers could not be found for some elements!");
       console.log(orphans);
     }
-    // draw layers
-
   }
 
   get coordString() {
