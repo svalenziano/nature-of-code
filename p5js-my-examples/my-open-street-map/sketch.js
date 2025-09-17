@@ -143,6 +143,22 @@ class Layer {
     this.elements.push(element);
   }
 
+  matchesTags(tags) {
+    /*
+    input = 
+      - tags = '{"destination:street":"Chapel Hill Street","highway":"motorway_link","lanes":"1","oneway":"yes","surface":"concrete"}'
+      - this.keysAndTags = '{"leisure":["park","garden"],"landuse":["grass"]}'
+    return = boolean
+    */
+    for (let [eleKey, eleTag] of Object.entries(tags)) {
+      if (Object.keys(this.keysAndTags).includes(eleKey) && (
+          this.keysAndTags[eleKey] === null || this.keysAndTags[eleKey].includes(eleTag))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   get queryString() {
     let string = "";
     for (const key in this.keysAndTags) {
@@ -184,12 +200,18 @@ Map contains and orchestrates Layers
 class StreetMap {
 
   static defaultLayers = [
-    // { 
-    //   name: "Buildings",
-    //   keysAndTags: {
-    //     building: null,
-    //   },
-    // },
+    { 
+      name: "Buildings",
+      keysAndTags: {
+        building: null,
+      },
+    },
+    {
+      name: "Roads",
+      keysAndTags: {
+        highway: ["motorway", "motorway_link", "trunk", "primary", "primary_link", "secondary", "tertiary", "tertiary_link","residential", "service"]
+      },
+    },
     {
       name: "Green Space",
       keysAndTags: {
@@ -267,16 +289,14 @@ class StreetMap {
       1) Warn if orphans are found
       2) Dispatch elements from json to each Layer
     */
-    const orphans = [];
-    let foundElements = 0;
+    const orphanElements = [];
+    let foundCount = 0;
 
     elementIteration: for (const element of json.elements) {
       /*
       (HELPER)
       layerMatchesTag(tag):
-        input = 
-          - tags = '{"destination:street":"Chapel Hill Street","highway":"motorway_link","lanes":"1","oneway":"yes","surface":"concrete"}'
-          - this.keysAndTags = '{"leisure":["park","garden"],"landuse":["grass"]}'
+
         return = boolean
         idea v2: iterate thru element tags (not layer tags) because you can use 'includes' more easily
         algo v2:
@@ -309,29 +329,22 @@ class StreetMap {
             break
       
       */
-      const elementKeys = Object.keys(element.tags);
 
       for (let layer of this.layers) {
-        for (let [key, tag] of Object.entries(layer.keysAndTags)) {
-          // layer accepts ALL key values OR 
-          // layer accepts specific key-tag combo
-          if (elementKeys.includes(key) 
-              && (tag === null || element.tags[key] === tag)) {  
-            layer.addElement(element);
-            foundElements += 1;
-            continue elementIteration;
-          } else {
-            orphans.push(element);
-            continue elementIteration;
-          }
+        if (layer.matchesTags(element.tags)) {
+          foundCount += 1;
+          layer.addElement(element);
+          continue elementIteration;
         }
       }
+      // push to 'orphans' if not found in any layer
+      orphanElements.push(element);
     }
-    if (orphans.length > 0) {
-      console.error(`Warning: layers could not be found for ${orphans.length} elements!`);
-      console.error(orphans);
+    if (orphanElements.length > 0) {
+      console.error(`Warning: layers could not be found for ${orphanElements.length} elements!`);
+      console.error(orphanElements);
     }
-    console.log(`Dispatched ${foundElements} elements to layers.`)
+    console.log(`Dispatched ${foundCount} elements to layers.`)
   }
 
   get coordString() {
