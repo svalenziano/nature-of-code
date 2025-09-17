@@ -70,13 +70,14 @@ class Layer {
     return `${key}:${tag}`;
   }
 
-  constructor({name, tags}) {
+  constructor({name, tags, color_line, color_fill}) {
     /*
     tags = JS object: `{building: null, leisure: [park, garden], landuse: [grass, forest, meadow, orchard]}` where `null` represents ALL tags for that key
     */
     this.name = name;
     this.tags = tags;
-    this.fillColor = null;
+    this.color_line = color_line;
+    this.color_fill = color_fill;
     this.elements = [];  // collection of elements from OSM API response
 
     Object.values(tags).forEach((tag) => {
@@ -86,8 +87,13 @@ class Layer {
     })
   }
 
-  draw({coords}) {
+  draw({coords, elements, filterCB}) {
     /*
+    REQ'D ARGS
+      coords = required,
+    OPTIONAL ARGS
+      elements = array of elements to be drawn
+      filterCB = callback to filter elements (ele)
     EXPECTED INPUT = ARRAY:
         [
           { "lat": 35.9945128, "lon": -78.9050525 },
@@ -96,25 +102,36 @@ class Layer {
         ]
     */
 
-    if (this.fillColor) {
-      fill(this.fillColor);
+    if (this.color_fill) {
+      fill(this.color_fill);
     } else {
       noFill();
     }
-    for (let ele of this.elements) {
+
+    stroke(this.color_line);
+    
+    elements = elements || this.elements;
+
+    if (filterCB) {
+      elements = elements.filter(filterCB);
+      console.info(elements);
+    }
+
+    for (let ele of elements) {
       if (ele.type === "way") {
         beginShape();
         for (const point of ele.geometry) {
-          this.drawVertex({coords, point});
+          this.drawVertex({coords, pt});
         }
         endShape();
       } else if (ele.type === "relation") {
         for (const member of ele.members) {
+          console.log("drawing")
           beginShape();
-          for (const point of member.geometry) {
-            this.drawVertex({coords, point});
+          for (const pt of member.geometry) {
+            this.drawVertex({coords, pt});
           }
-          endShape;
+          endShape();
         }
       } else {
         console.log("ABORTING");
@@ -124,14 +141,15 @@ class Layer {
     }
   }
 
-  drawVertex({coords, point}) {
+  drawVertex({coords, pt}) {
     /*
     point = eg {lat: 1.23, lon: 4.56}
     coords = OSM coords array eg [1.23, 4.56, 7.89, 9.99] (latMin, longMin, etc)
     */
     const [latMin, longMin, latMax, longMax] = coords;
-    let y = map(point.lat, latMin, latMax, height, 0);
-    let x = map(point.lon, longMin, longMax, 0, width);
+    let y = map(pt.lat, latMin, latMax, height, 0);
+    let x = map(pt.lon, longMin, longMax, 0, width);
+    point(x, y);
     vertex(x, y);
   }
 
@@ -146,8 +164,8 @@ class Layer {
   matchesTags(tags) {
     /*
     input = 
-      - tags = '{"destination:street":"Chapel Hill Street","highway":"motorway_link","lanes":"1","oneway":"yes","surface":"concrete"}'
-      - this.tags = '{"leisure":["park","garden"],"landuse":["grass"]}'
+      - tags = eg {"destination:street":"Chapel Hill Street","highway":"motorway_link","lanes":"1","oneway":"yes","surface":"concrete"}
+      - this.tags = eg {"leisure":["park","garden"],"landuse":["grass"]}
     return = boolean
     */
     for (let [eleKey, eleTag] of Object.entries(tags)) {
@@ -184,18 +202,24 @@ class StreetMap {
   static defaultLayers = [
     { 
       name: "Buildings",
+      color_fill: "rgba(255, 255, 255, 0.73)",
+      color_line: "rgba(0, 0, 0, 1)",
       tags: {
         building: null,
       },
     },
     {
       name: "Roads",
+      color_fill: "rgba(255, 255, 255, 0)",
+      color_line: "rgba(155, 155, 155, 1)",
       tags: {
         highway: ["motorway", "motorway_link", "trunk", "primary", "primary_link", "secondary", "tertiary", "tertiary_link","residential", "service"]
       },
     },
     {
       name: "Green Space",
+      color_fill: "rgba(42, 148, 0, 0.8)",
+      color_line: "rgba(243, 0, 0, 1)",
       tags: {
         leisure: ["park", "garden"],
         landuse: ["grass"],
@@ -203,6 +227,8 @@ class StreetMap {
     },
     {
       name: "Public Space",
+      color_fill: "rgba(255, 255, 255, 0.47)",
+      color_line: "rgba(208, 255, 0, 1)",
       tags: {
         leisure: ["village_green", "track"],
         amenity: ["school"],
@@ -210,12 +236,16 @@ class StreetMap {
     },
     {
       name: "Paths",
+      color_fill: "rgba(255, 255, 255, 0.47)",
+      color_line: "rgba(0, 36, 243, 1)", 
       tags: {
         highway: ["footway", "service", "driveway"],
       },
     },
     {
       name: "Water",
+      color_fill: "rgba(40, 25, 255, 0.86)",
+      color_line: "rgba(4, 0, 243, 1)",
       tags: {
         waterway: null,
         natural: ["water"],
@@ -223,6 +253,8 @@ class StreetMap {
     },
     {
       name: "Parking",
+      color_fill: "rgba(255, 255, 255, 0.47)",
+      color_line: "rgba(243, 0, 0, 1)",
       tags: {
         parking: null,
         parking_space: null,
@@ -231,6 +263,8 @@ class StreetMap {
     },
     {
       name: "No Tresspassing",
+      color_fill: "rgba(255, 255, 255, 0.47)",
+      color_line: "rgba(243, 0, 0, 1)",
       tags: {
         access: ["private"],
       },
@@ -246,6 +280,7 @@ class StreetMap {
 
     this.layers = [];
     this.dispatchHash = {};
+    this.color_bg = "rgba(240, 240, 240, 1)"
 
     this.populateDefaultLayers();
     this.updateDispatchHash();
@@ -255,12 +290,16 @@ class StreetMap {
     const json = await this.fetchlayers();
     console.log(json);
     this.dispatchToLayer(json);
-    this.draw();
+    this.draw({filterCB: (e) => e.type === "relation" && e.members.length === 4});
   }
 
-  draw() {
+  clear() {
+    background(this.color_bg);
+  }
+
+  draw({filterCB}) {
     for (const layer of this.layers) {
-      layer.draw({coords: this.coords})
+      layer.draw({coords: this.coords, filterCB})
     }
   }
 
