@@ -184,53 +184,53 @@ Map contains and orchestrates Layers
 class StreetMap {
 
   static defaultLayers = [
-    { 
-      name: "Buildings",
+    // { 
+    //   name: "Buildings",
+    //   keysAndTags: {
+    //     building: null,
+    //   },
+    // },
+    {
+      name: "Green Space",
       keysAndTags: {
-        building: null,
+        leisure: ["park", "garden"],
+        landuse: ["grass"],
       },
     },
-    // {
-    //   name: "Green Space",
-    //   keysAndTags: {
-    //     leisure: ["park", "garden"],
-    //     landuse: ["grass"],
-    //   },
-    // },
-    // {
-    //   name: "Public Space",
-    //   keysAndTags: {
-    //     leisure: ["village_green", "track"],
-    //     amenity: ["school"],
-    //   }
-    // },
-    // {
-    //   name: "Paths",
-    //   keysAndTags: {
-    //     highway: ["footway", "service", "driveway"],
-    //   },
-    // },
-    // {
-    //   name: "Water",
-    //   keysAndTags: {
-    //     waterway: null,
-    //     natural: ["water"],
-    //   },
-    // },
-    // {
-    //   name: "Parking",
-    //   keysAndTags: {
-    //     parking: null,
-    //     parking_space: null,
-    //     amenity: ["parking"]
-    //   }
-    // },
-    // {
-    //   name: "No Tresspassing",
-    //   keysAndTags: {
-    //     access: ["private"],
-    //   },
-    // },
+    {
+      name: "Public Space",
+      keysAndTags: {
+        leisure: ["village_green", "track"],
+        amenity: ["school"],
+      }
+    },
+    {
+      name: "Paths",
+      keysAndTags: {
+        highway: ["footway", "service", "driveway"],
+      },
+    },
+    {
+      name: "Water",
+      keysAndTags: {
+        waterway: null,
+        natural: ["water"],
+      },
+    },
+    {
+      name: "Parking",
+      keysAndTags: {
+        parking: null,
+        parking_space: null,
+        amenity: ["parking"]
+      }
+    },
+    {
+      name: "No Tresspassing",
+      keysAndTags: {
+        access: ["private"],
+      },
+    },
   ];
 
   constructor(coords) {
@@ -268,34 +268,70 @@ class StreetMap {
       2) Dispatch elements from json to each Layer
     */
     const orphans = [];
-    let found = 0;
+    let foundElements = 0;
 
-    for (const element of json.elements) {
-      let layerFound = false;
+    elementIteration: for (const element of json.elements) {
+      /*
+      (HELPER)
+      layerMatchesTag(tag):
+        input = 
+          - tags = '{"destination:street":"Chapel Hill Street","highway":"motorway_link","lanes":"1","oneway":"yes","surface":"concrete"}'
+          - this.keysAndTags = '{"leisure":["park","garden"],"landuse":["grass"]}'
+        return = boolean
+        idea v2: iterate thru element tags (not layer tags) because you can use 'includes' more easily
+        algo v2:
+          - for each elementKey, elementTag in Object.entries(element.tags):
+            - if Object.keys(layer.keysAndTags) includes elementKey:
+              - if layer.keysAndTags[elementKey] includes elementTag:
+                return true
+          - return false 
 
-      for (const entry in this.dispatchHash) {
-        if (!entry.includes(":") && Object.keys(element.tags).includes(entry)) {
-          const layer = this.dispatchHash[entry];
-          layer.addElement(element);
-          layerFound = true;
-        } else {
-          const [key, tag] = entry.split(":");
-          if (element['tags'][key] === tag) {
-            const layer = this.dispatchHash[entry];
+      (MAIN)
+      elementKeys = Object.keys(element.tags);
+
+      for each layer:
+        if layerMatchesTag(tags):
+          found += 1
+          add element to layer
+          continue w next 'element' loop
+      push element to `orphans` and break
+
+        for each [key, tag] of Object.entries(layer.keysAndTags):
+          if elementKeys.includes(key) && tag === null: (layer accepts ALL key values)
+            add element to layer
+            break
+          else if elementKeys.includes(key) && element.tags[key] === tag: (element includes specific key-tag combination)
+            add element to layer
+            break
+          else
+            found -= 1
+            push element to `orphans`
+            break
+      
+      */
+      const elementKeys = Object.keys(element.tags);
+
+      for (let layer of this.layers) {
+        for (let [key, tag] of Object.entries(layer.keysAndTags)) {
+          // layer accepts ALL key values OR 
+          // layer accepts specific key-tag combo
+          if (elementKeys.includes(key) 
+              && (tag === null || element.tags[key] === tag)) {  
             layer.addElement(element);
-            layerFound = true;
+            foundElements += 1;
+            continue elementIteration;
+          } else {
+            orphans.push(element);
+            continue elementIteration;
           }
         }
       }
-
-      if (layerFound) found += 1;
-      else orphans.push(element);
     }
     if (orphans.length > 0) {
       console.error(`Warning: layers could not be found for ${orphans.length} elements!`);
       console.error(orphans);
     }
-    console.log(`Dispatched ${found} elements to layers.`)
+    console.log(`Dispatched ${foundElements} elements to layers.`)
   }
 
   get coordString() {
