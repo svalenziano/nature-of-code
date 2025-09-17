@@ -70,16 +70,16 @@ class Layer {
     return `${key}:${tag}`;
   }
 
-  constructor({name, keysAndTags}) {
+  constructor({name, tags}) {
     /*
-    keysAndTags = JS object: `{building: null, leisure: [park, garden], landuse: [grass, forest, meadow, orchard]}` where `null` represents ALL tags for that key
+    tags = JS object: `{building: null, leisure: [park, garden], landuse: [grass, forest, meadow, orchard]}` where `null` represents ALL tags for that key
     */
     this.name = name;
-    this.keysAndTags = keysAndTags;
+    this.tags = tags;
     this.fillColor = null;
     this.elements = [];  // collection of elements from OSM API response
 
-    Object.values(keysAndTags).forEach((tag) => {
+    Object.values(tags).forEach((tag) => {
       if (tag !== null && !Array.isArray(tag)) {
         throw new Error("tag must be `null` or Array");
       }
@@ -147,12 +147,12 @@ class Layer {
     /*
     input = 
       - tags = '{"destination:street":"Chapel Hill Street","highway":"motorway_link","lanes":"1","oneway":"yes","surface":"concrete"}'
-      - this.keysAndTags = '{"leisure":["park","garden"],"landuse":["grass"]}'
+      - this.tags = '{"leisure":["park","garden"],"landuse":["grass"]}'
     return = boolean
     */
     for (let [eleKey, eleTag] of Object.entries(tags)) {
-      if (Object.keys(this.keysAndTags).includes(eleKey) && (
-          this.keysAndTags[eleKey] === null || this.keysAndTags[eleKey].includes(eleTag))) {
+      if (Object.keys(this.tags).includes(eleKey) && (
+          this.tags[eleKey] === null || this.tags[eleKey].includes(eleTag))) {
         return true;
       }
     }
@@ -161,8 +161,8 @@ class Layer {
 
   get queryString() {
     let string = "";
-    for (const key in this.keysAndTags) {
-      const tags = this.keysAndTags[key];
+    for (const key in this.tags) {
+      const tags = this.tags[key];
       if (tags === null) {
         string += `wr["${key}"];`;
       } else if (tags.length > 1) {
@@ -174,24 +174,6 @@ class Layer {
     return string;
   }
 
-  get dispatchHash() {
-    /*
-    Input: none (use this.keysAndTags)
-    Return: object eg {"building": this} or {"leisure:park": this, "leisure:garden": this}
-    */
-    const result = {};
-    for (const key in this.keysAndTags) {
-      const tags = this.keysAndTags[key];
-      if (tags === null) {
-        result[key] = this;
-      } else {
-        tags.forEach((tag) => {
-          result[Layer.hashKeyTag(key, tag)] = this;
-        })
-      }
-    }
-    return result;
-  }
 }
 
 /*
@@ -202,46 +184,46 @@ class StreetMap {
   static defaultLayers = [
     { 
       name: "Buildings",
-      keysAndTags: {
+      tags: {
         building: null,
       },
     },
     {
       name: "Roads",
-      keysAndTags: {
+      tags: {
         highway: ["motorway", "motorway_link", "trunk", "primary", "primary_link", "secondary", "tertiary", "tertiary_link","residential", "service"]
       },
     },
     {
       name: "Green Space",
-      keysAndTags: {
+      tags: {
         leisure: ["park", "garden"],
         landuse: ["grass"],
       },
     },
     {
       name: "Public Space",
-      keysAndTags: {
+      tags: {
         leisure: ["village_green", "track"],
         amenity: ["school"],
       }
     },
     {
       name: "Paths",
-      keysAndTags: {
+      tags: {
         highway: ["footway", "service", "driveway"],
       },
     },
     {
       name: "Water",
-      keysAndTags: {
+      tags: {
         waterway: null,
         natural: ["water"],
       },
     },
     {
       name: "Parking",
-      keysAndTags: {
+      tags: {
         parking: null,
         parking_space: null,
         amenity: ["parking"]
@@ -249,7 +231,7 @@ class StreetMap {
     },
     {
       name: "No Tresspassing",
-      keysAndTags: {
+      tags: {
         access: ["private"],
       },
     },
@@ -293,42 +275,6 @@ class StreetMap {
     let foundCount = 0;
 
     elementIteration: for (const element of json.elements) {
-      /*
-      (HELPER)
-      layerMatchesTag(tag):
-
-        return = boolean
-        idea v2: iterate thru element tags (not layer tags) because you can use 'includes' more easily
-        algo v2:
-          - for each elementKey, elementTag in Object.entries(element.tags):
-            - if Object.keys(layer.keysAndTags) includes elementKey:
-              - if layer.keysAndTags[elementKey] includes elementTag:
-                return true
-          - return false 
-
-      (MAIN)
-      elementKeys = Object.keys(element.tags);
-
-      for each layer:
-        if layerMatchesTag(tags):
-          found += 1
-          add element to layer
-          continue w next 'element' loop
-      push element to `orphans` and break
-
-        for each [key, tag] of Object.entries(layer.keysAndTags):
-          if elementKeys.includes(key) && tag === null: (layer accepts ALL key values)
-            add element to layer
-            break
-          else if elementKeys.includes(key) && element.tags[key] === tag: (element includes specific key-tag combination)
-            add element to layer
-            break
-          else
-            found -= 1
-            push element to `orphans`
-            break
-      
-      */
 
       for (let layer of this.layers) {
         if (layer.matchesTags(element.tags)) {
