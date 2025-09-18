@@ -66,9 +66,7 @@ class SlowFetcher {
 }
 
 class Layer {
-  static hashKeyTag(key, tag) {
-    return `${key}:${tag}`;
-  }
+
 
   constructor({name, tags, color_line, color_fill}) {
     /*
@@ -85,6 +83,15 @@ class Layer {
         throw new Error("tag must be `null` or Array");
       }
     })
+  }
+
+  static relationHasCutouts(element) {
+    /*
+    Given a relation, is at least one of it's members role === 'inner'?
+    */
+    const m = element.members;
+    if (m && m[m.length - 1].role === "inner") return true;
+    return false;
   }
 
   draw({coords, elements, filterCB}) {
@@ -112,7 +119,7 @@ class Layer {
     
     elements = elements || this.elements;
 
-    if (filterCB) {
+    if (filterCB instanceof Function) {
       elements = elements.filter(filterCB);
       console.info(elements);
     }
@@ -120,18 +127,35 @@ class Layer {
     for (let ele of elements) {
       if (ele.type === "way") {
         beginShape();
-        for (const point of ele.geometry) {
-          this.drawVertex({coords, pt});
+        for (const pt of ele.geometry) {
+          Layer.addVertex({coords, pt});
         }
         endShape();
       } else if (ele.type === "relation") {
-        for (const member of ele.members) {
-          console.log("drawing")
+        if (Layer.relationHasCutouts(ele)) {
           beginShape();
-          for (const pt of member.geometry) {
-            this.drawVertex({coords, pt});
-          }
+          // DRAW OUTER CONTOURS
+          ele.members.filter((member) => member.role === "outer")
+            .map((member) => member.geometry)
+            .forEach((pt) => Layer.addVertex({coords, pt, bounds:ele.bounds}));
+          // DRAW INNER CONTOURS IN REVERSE
+          // todo - make helper function and implement!
+          ele.members.filter((member) => member.role === "inner")
+            .forEach((member) => Layer.createCutout({
+              coords, 
+              memberGeometry: member.geometry,
+              bounds:ele.bounds
+            }));
           endShape();
+        } else {
+          for (const member of ele.members) {
+            beginShape();
+            
+            for (const pt of member.geometry) {
+              Layer.addVertex({coords, pt});
+            }
+            endShape();
+          }
         }
       } else {
         console.log("ABORTING");
@@ -141,12 +165,34 @@ class Layer {
     }
   }
 
-  drawVertex({coords, pt}) {
+  static createCutout({coords, memberGeometry, bounds}) {
+    /*
+    Input = member.geometry eg '[{"lat":35.9894581,"lon":-78.8993456},...]'
+    Return: none
+    SideEffect = beginContour, drawVertex, endContour
+    */
+    beginContour();
+    memberGeometry
+      .reverse()
+      .forEach((pt) => {
+        Layer.addVertex({coords, pt, bounds});
+      })
+    endContour();
+  }
+
+  static addVertex({coords, pt, bounds}) {
     /*
     point = eg {lat: 1.23, lon: 4.56}
     coords = OSM coords array eg [1.23, 4.56, 7.89, 9.99] (latMin, longMin, etc)
     */
-    const [latMin, longMin, latMax, longMax] = coords;
+    let latMin, longMin, latMax, longMax;
+    if (DEBUG.drawLarge === true && bounds) {
+      // Use bounds of element as min and max
+      const {minlat, minlon, maxlat, maxlon} = bounds;
+      [latMin, longMin, latMax, longMax] = [minlat, minlon, maxlat, maxlon];
+    } else {
+      [latMin, longMin, latMax, longMax] = coords;
+    }
     let y = map(pt.lat, latMin, latMax, height, 0);
     let x = map(pt.lon, longMin, longMax, 0, width);
     point(x, y);
@@ -290,7 +336,7 @@ class StreetMap {
     const json = await this.fetchlayers();
     console.log(json);
     this.dispatchToLayer(json);
-    this.draw({filterCB: (e) => e.type === "relation" && e.members.length === 4});
+    this.draw({filterCB: DEBUG.activeFilter});
   }
 
   clear() {
@@ -469,6 +515,25 @@ const coords = TestCoordinates.coords.Durham;
 const osmFetcher = new SlowFetcher(REQUEST_DELAY);
 const [latMin, longMin, latMax, longMax] = coords;
 let myMap;
+
+
+const FILTERS = {
+  none: null,
+
+  cutouts(ele) {
+    return (
+      ele.id === 355718 ||  // running track w/ inner and outer
+      ele.id === 3423713 || // church
+      ele.id === 7586589 || // grass thingy?
+      ele.members && ele.members.length === 4
+    )
+  }
+}
+
+const DEBUG = {
+  activeFilter: FILTERS.cutouts,
+  drawLarge: true,
+}
 
 async function setup() {
   createCanvas(800, 800);
