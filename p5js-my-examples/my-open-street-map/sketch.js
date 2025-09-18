@@ -99,7 +99,7 @@ class Layer {
     Limitation: for relations, this function checks to see if any duplicate points exist.  There's probably a better way.
     */
     if (element.type === "way") {
-      
+
       const first = element.geometry[0];
       const last = element.geometry.slice(-1)[0];
       return JSON.stringify(first) === JSON.stringify(last);
@@ -134,13 +134,17 @@ class Layer {
           ...
         ]
     */
-
-    stroke(this.color_line);
+    if (this.color_line) {
+      stroke(this.color_line);
+    } else {
+      noStroke();
+    }
     
     elements = elements || this.elements;
 
     if (filterCB instanceof Function) {
       elements = elements.filter(filterCB);
+      console.log(`Filtered elements for layer "${this.name}":`)
       console.info(elements);
     }
 
@@ -279,28 +283,37 @@ Map contains and orchestrates Layers
 */
 class StreetMap {
 
+  static colors = {
+    bg: "rgb(241, 244, 203)",
+    dark: "rgb(65, 54, 51)",
+    bright: "rgb(239, 96, 94)",
+    green: "rgba(153, 197, 114, 1)",
+    blue: "rgba(138, 181, 204, 1)",
+    ick: "rgba(115, 28, 122, 1)",
+  }
+
   // Top layers are drawn last
   static defaultLayers = [
     { 
       name: "Buildings",
-      color_fill: "rgba(66, 66, 66, 0.73)",
-      color_line: "rgba(0, 0, 0, 0.73)",
+      color_fill: StreetMap.colors.dark,
+      color_line: StreetMap.colors.dark,
       tags: {
         building: null,
       },
     },
     {
       name: "Roads",
-      color_fill: "rgba(255, 255, 255, 0)",
-      color_line: "rgba(155, 155, 155, 1)",
+      color_fill: null,
+      color_line: StreetMap.colors.dark,
       tags: {
         highway: ["motorway", "motorway_link", "trunk", "primary", "primary_link", "secondary", "tertiary", "tertiary_link","residential", "service"]
       },
     },
     {
       name: "Green Space",
-      color_fill: "rgba(42, 148, 0, 0.8)",
-      color_line: "rgba(243, 0, 0, 1)",
+      color_fill: StreetMap.colors.green,
+      color_line: StreetMap.colors.dark,
       tags: {
         leisure: ["park", "garden"],
         landuse: ["grass"],
@@ -308,8 +321,8 @@ class StreetMap {
     },
     {
       name: "Public Space",
-      color_fill: "rgba(255, 255, 255, 0.47)",
-      color_line: "rgba(208, 255, 0, 1)",
+      color_fill: StreetMap.colors.green,
+      color_line: StreetMap.colors.dark,
       tags: {
         leisure: ["village_green", "track"],
         amenity: ["school"],
@@ -317,16 +330,16 @@ class StreetMap {
     },
     {
       name: "Paths",
-      color_fill: "rgba(255, 255, 255, 0.47)",
-      color_line: "rgba(0, 36, 243, 1)", 
+      color_fill: null,
+      color_line: StreetMap.colors.dark, 
       tags: {
         highway: ["footway", "service", "driveway"],
       },
     },
     {
       name: "Water",
-      color_fill: "rgba(40, 25, 255, 0.86)",
-      color_line: "rgba(4, 0, 243, 1)",
+      color_fill: StreetMap.colors.blue,
+      color_line: StreetMap.colors.dark,
       tags: {
         waterway: null,
         natural: ["water"],
@@ -334,8 +347,8 @@ class StreetMap {
     },
     {
       name: "Parking",
-      color_fill: "rgba(255, 255, 255, 0.47)",
-      color_line: "rgba(243, 0, 0, 1)",
+      color_fill: StreetMap.colors.ick,
+      color_line: StreetMap.colors.bg,
       tags: {
         parking: null,
         parking_space: null,
@@ -344,8 +357,8 @@ class StreetMap {
     },
     {
       name: "No Tresspassing",
-      color_fill: "rgba(255, 255, 255, 0.47)",
-      color_line: "rgba(243, 0, 0, 1)",
+      color_fill: StreetMap.colors.bright,
+      color_line: null,
       tags: {
         access: ["private"],
       },
@@ -361,7 +374,7 @@ class StreetMap {
 
     this.layers = [];
     this.dispatchHash = {};
-    this.color_bg = "rgba(240, 240, 240, 1)"
+    this.color_bg = "rgba(241, 244, 203, 1)"
 
     this.populateDefaultLayers();
     this.updateDispatchHash();
@@ -572,13 +585,13 @@ const DEBUG = {
 
 async function setup() {
   createCanvas(800, 800);
-  background(240);
   noFill();
   strokeWeight(0.5);
   console.log("loading...")
   // renderTile(coords, await fetchLayer(coords, [myQueries.building]));
   // setupListeners();
   myMap = new StreetMap(coords);
+  myMap.clear();
   await myMap.init();
   console.log("Setup is complete!")
 }
