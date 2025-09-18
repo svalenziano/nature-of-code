@@ -135,9 +135,17 @@ class Layer {
         if (Layer.relationHasCutouts(ele)) {
           beginShape();
           // DRAW OUTER CONTOURS
-          ele.members.filter((member) => member.role === "outer")
-            .map((member) => member.geometry)
-            .forEach((pt) => Layer.addVertex({coords, pt, bounds:ele.bounds}));
+          // ele.members.filter((member) => member.role === "outer")
+          //   .map((member) => member.geometry)
+          //   .forEach((pt) => Layer.addVertex({coords, pt, bounds:ele.bounds}));
+          for (const member of ele.members.filter((m) => m.role === "outer")) {
+            const geo = member.geometry;
+            for (let pt of geo) {
+              Layer.addVertex({coords, pt, bounds:ele.bounds});
+            }
+          }
+
+
           // DRAW INNER CONTOURS IN REVERSE
           // todo - make helper function and implement!
           ele.members.filter((member) => member.role === "inner")
@@ -531,8 +539,8 @@ const FILTERS = {
 }
 
 const DEBUG = {
-  activeFilter: FILTERS.cutouts,
-  drawLarge: true,
+  activeFilter: FILTERS.none,
+  drawLarge: false,
 }
 
 async function setup() {
