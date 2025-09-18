@@ -94,6 +94,32 @@ class Layer {
     return false;
   }
 
+  static isClosed(element) {
+    /*
+    Limitation: for relations, this function checks to see if any duplicate points exist.  There's probably a better way.
+    */
+    if (element.type === "way") {
+      
+      const first = element.geometry[0];
+      const last = element.geometry.slice(-1)[0];
+      return JSON.stringify(first) === JSON.stringify(last);
+
+    } else if (element.type === "relation") {
+      
+      const seen = [];
+
+      for (let member of element.members) {
+        if (member.role === "inner") continue;
+        for (let pt of member.geometry) {
+          const pointString = JSON.stringify(pt);
+          if (seen.includes(pointString)) return true
+          seen.push(pointString);
+        }
+      }
+      return false;
+    }
+  }
+
   draw({coords, elements, filterCB}) {
     /*
     REQ'D ARGS
@@ -109,12 +135,6 @@ class Layer {
         ]
     */
 
-    if (this.color_fill) {
-      fill(this.color_fill);
-    } else {
-      noFill();
-    }
-
     stroke(this.color_line);
     
     elements = elements || this.elements;
@@ -125,6 +145,12 @@ class Layer {
     }
 
     for (let ele of elements) {
+      if (Layer.isClosed(ele) && this.color_fill) {
+        fill(this.color_fill);
+      } else {
+        noFill();
+      }
+
       if (ele.type === "way") {
         beginShape();
         for (const pt of ele.geometry) {
