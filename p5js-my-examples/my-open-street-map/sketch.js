@@ -6,6 +6,9 @@ Written by Steven Valenziano in 2025 to practice working with DOM manipulation, 
 HEAVILY INSPIRED BY: Prettymaps, by Marcelo de Oliveira Rosa Prates (https://github.com/marceloprates/prettymaps)
 
 Dependencies: p5js library
+
+TODO / KNOWN LIMITATIONS:
+  - Support for OSM multipolygons needs to be improved
 */
 
 
@@ -63,6 +66,14 @@ class SlowFetcher {
       return fetch(url, options);  
     }
   }
+}
+
+class Shape {
+  /*
+  Misc utilities for drawing shapes
+  */
+
+
 }
 
 class Layer {
@@ -149,11 +160,16 @@ class Layer {
     }
 
     for (let ele of elements) {
+      
+      // SET FILL COLOR
       if (Layer.isClosed(ele) && this.color_fill) {
         fill(this.color_fill);
       } else {
         noFill();
       }
+
+      // SET STROKE WEIGHT
+      strokeWeight(StreetMap.getStroke(ele));
 
       if (ele.type === "way") {
         beginShape();
@@ -187,6 +203,8 @@ class Layer {
           endShape();
         } else {  // Relations w/ no cutouts
           for (const member of ele.members) {
+            if (!member.geometry) continue;
+            
             beginShape();
             
             for (const pt of member.geometry) {
@@ -233,7 +251,7 @@ class Layer {
     }
     let y = map(pt.lat, latMin, latMax, height, 0);
     let x = map(pt.lon, longMin, longMax, 0, width);
-    point(x, y);
+    if (DEBUG.drawVertices) point(x, y);
     vertex(x, y);
   }
 
@@ -285,21 +303,47 @@ class StreetMap {
 
   static colors = {
     bg: "rgb(241, 244, 203)",
+    light: "rgba(255, 255, 255, 1)",
     dark: "rgb(65, 54, 51)",
-    bright: "rgb(239, 96, 94)",
+    bright: "rgba(238, 86, 66, 1)",
     green: "rgba(153, 197, 114, 1)",
     blue: "rgba(138, 181, 204, 1)",
     ick: "rgba(115, 28, 122, 1)",
   }
 
+  static strokesWeights = {
+    faint: 0.3,
+    light: 0.5,
+    medium: 1.3,
+    heavy: 2.5,
+    super: 4,
+  }
+
+
   // Top layers are drawn last
   static defaultLayers = [
     { 
-      name: "Buildings",
-      color_fill: StreetMap.colors.dark,
+      name: "Resi Buildings",
+      color_fill: StreetMap.colors.bright,
       color_line: StreetMap.colors.dark,
       tags: {
+        building: ["house", "residential", "detached", "apartments", "semidetached_house", "bungalow", "dormitory"],
+      },
+    },
+    { 
+      name: "All Buildings",
+      color_fill: StreetMap.colors.dark,
+      color_line: StreetMap.colors.bright,
+      tags: {
         building: null,
+      },
+    },
+    {
+      name: "Paths",
+      color_fill: StreetMap.colors.bg,
+      color_line: StreetMap.colors.dark, 
+      tags: {
+        highway: ["footway", "service", "driveway", "path", "pedestrian"],
       },
     },
     {
@@ -307,7 +351,16 @@ class StreetMap {
       color_fill: null,
       color_line: StreetMap.colors.dark,
       tags: {
-        highway: ["motorway", "motorway_link", "trunk", "primary", "primary_link", "secondary", "tertiary", "tertiary_link","residential", "service"]
+        highway: ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link","residential", "service"]
+      },
+    },
+    {
+      name: "Water",
+      color_fill: StreetMap.colors.blue,
+      color_line: StreetMap.colors.dark,
+      tags: {
+        waterway: null,
+        natural: ["water"],
       },
     },
     {
@@ -324,26 +377,9 @@ class StreetMap {
       color_fill: StreetMap.colors.green,
       color_line: StreetMap.colors.dark,
       tags: {
-        leisure: ["village_green", "track"],
+        leisure: ["village_green", "track", "dog_park"],
         amenity: ["school"],
       }
-    },
-    {
-      name: "Paths",
-      color_fill: null,
-      color_line: StreetMap.colors.dark, 
-      tags: {
-        highway: ["footway", "service", "driveway"],
-      },
-    },
-    {
-      name: "Water",
-      color_fill: StreetMap.colors.blue,
-      color_line: StreetMap.colors.dark,
-      tags: {
-        waterway: null,
-        natural: ["water"],
-      },
     },
     {
       name: "Parking",
@@ -352,7 +388,8 @@ class StreetMap {
       tags: {
         parking: null,
         parking_space: null,
-        amenity: ["parking"]
+        amenity: ["parking"],
+        building: ["parking", "parking_garage", "parking_shelter", "car_park", "parkingbuilding", "parking_deck"]
       }
     },
     {
@@ -385,6 +422,36 @@ class StreetMap {
     console.log(json);
     this.dispatchToLayer(json);
     this.draw({filterCB: DEBUG.activeFilter});
+  }
+
+  static getStroke(element) {
+    /*
+    TODO: adjust based on zoom level
+    */
+    const e = element;
+    const w = StreetMap.strokesWeights;
+    if ([
+      "motorway", 
+      "motorway_link", 
+      "trunk", 
+      "primary", 
+      "primary_link"
+    ].includes(e.tags.highway)) {
+      return w.super;
+    }
+    if (["secondary", "tertiary", "tertiary_link"].includes(e.tags.highway)) {
+      return w.heavy;
+    }
+    if (["residential", "service"].includes(e.tags.highway)) {
+      return w.medium;
+    }
+    if (["footway", "service", "driveway"].includes(e.tags.highway)) {
+      return w.light;
+    }
+    if ("building" in e.tags) {
+      return w.light;
+    }
+    return w.faint;
   }
 
   clear() {
@@ -534,14 +601,17 @@ class TestCoordinates {
   static coords = {
     Taipei: [25.029928, 121.470337, 25.054501, 121.499004],
     Durham: [35.985577, -78.913336, 36.004673, -78.888788],
+    Chicago: [41.876032,-87.625859,41.884707,-87.614164],
+    Amsterdam: [52.357112,4.865248,52.365027,4.878166],
   }
 }
 
 ///////////////////////////////////////////////////////////
 // GLOBALS AND CONFIG
-const OFFLINE = true;
-const TIMEOUT = 6;  // unit = seconds
+const OFFLINE = false;
+const TIMEOUT = 10;  // unit = seconds
 const REQUEST_DELAY = 3000;  // delay to play nice with OSM servers
+const coords = TestCoordinates.coords.Amsterdam;
 
 let done = false;
 
@@ -555,7 +625,6 @@ const myQueries = {
   industrial: `wr["landuse"~"industrial|quarry|brownfield|military|logging|landfill"];`
 }
 
-const coords = TestCoordinates.coords.Durham;
 
 ///////////////////////////////////////////////////////////
 // APP LOGIC
@@ -581,9 +650,11 @@ const FILTERS = {
 const DEBUG = {
   activeFilter: FILTERS.none,
   drawLarge: false,
+  drawVertices: false,
 }
 
 async function setup() {
+  document.body.style.backgroundColor = StreetMap.colors.bg;
   createCanvas(800, 800);
   noFill();
   strokeWeight(0.5);
