@@ -68,16 +68,68 @@ class SlowFetcher {
   }
 }
 
-class Shape {
+class Util {
   /*
-  Misc utilities for drawing shapes
+  Misc utilities 
   */
+
+  static toBbox(latitude, longitude, zoom) {
+    /*
+    Credit: LLM
+    Zoom levels: https://wiki.openstreetmap.org/wiki/Zoom_levels
+    */
+    const earthRadius = 6378137; // meters
+    const earthCircumference = 2 * Math.PI * earthRadius;
+    
+    // Calculate the pixel size at the given zoom level
+    const pixelsPerTile = 256;
+    const metersPerPixel = earthCircumference / (pixelsPerTile * (2 ** zoom));
+    
+    // Convert meters to degrees (approximate)
+    const metersPerDegreeLat = 111320; // meters per degree of latitude
+    const metersPerDegreeLon = Math.abs(
+        Math.cos(latitude * Math.PI / 180) * metersPerDegreeLat
+    );
+    
+    // Calculate half-width and half-height of the bounding box
+    const halfWidth = (pixelsPerTile / 2) * metersPerPixel / metersPerDegreeLon;
+    const halfHeight = (pixelsPerTile / 2) * metersPerPixel / metersPerDegreeLat;
+    
+    // Calculate bounding box coordinates
+    const minLon = longitude - halfWidth;
+    const maxLon = longitude + halfWidth;
+    const minLat = latitude - halfHeight;
+    const maxLat = latitude + halfHeight;
+    
+    return [minLat, minLon, maxLat, maxLon];
+  }
 
 
 }
 
-class Layer {
+class Nominatum {
+  static BASE_PATH = "https://nominatim.openstreetmap.org/search?";
 
+  static async freeForm(queryString) {
+    const params = ["q=" + encodeURIComponent(queryString)];
+    params.push("format=geojson")
+    const response = await fetch(Nominatum.BASE_PATH + params.join("&"));
+    const json = await response.json();
+    return json;
+  }
+
+  static getCentroid(json) {
+    if (!json.features) {
+      console.error("Features not found.  Here's the response:");
+      console.error(json);
+      return;
+    }
+    const centroid = json.features[0].geometry.coordinates;
+    return centroid;
+  }
+}
+
+class Layer {
 
   constructor({name, tags, color_line, color_fill}) {
     /*
@@ -603,6 +655,8 @@ class TestCoordinates {
     Durham: [35.985577, -78.913336, 36.004673, -78.888788],
     Chicago: [41.876032,-87.625859,41.884707,-87.614164],
     Amsterdam: [52.357112,4.865248,52.365027,4.878166],
+    Amsterdam2: Util.toBbox(52.64648, 4.80682, 15),
+    //52.64597,4.80820 
   }
 }
 
@@ -611,7 +665,7 @@ class TestCoordinates {
 const OFFLINE = false;
 const TIMEOUT = 10;  // unit = seconds
 const REQUEST_DELAY = 3000;  // delay to play nice with OSM servers
-const coords = TestCoordinates.coords.Amsterdam;
+const coords = TestCoordinates.coords.Amsterdam2;
 
 let done = false;
 
@@ -658,9 +712,12 @@ async function setup() {
   createCanvas(800, 800);
   noFill();
   strokeWeight(0.5);
-  console.log("loading...")
-  // renderTile(coords, await fetchLayer(coords, [myQueries.building]));
-  // setupListeners();
+  console.log("loading...");
+
+  // WORK IN PROGRESS / TODO / TKTK
+  const json = await Nominatum.freeForm("Durham, NC");
+  console.log(Nominatum.getCentroid(json))
+
   myMap = new StreetMap(coords);
   myMap.clear();
   await myMap.init();
