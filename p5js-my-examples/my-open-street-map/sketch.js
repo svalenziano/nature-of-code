@@ -155,7 +155,7 @@ class Layer {
               bounds:ele.bounds
             }));
           endShape();
-        } else {
+        } else {  // Relations w/ no cutouts
           for (const member of ele.members) {
             beginShape();
             
@@ -253,11 +253,12 @@ Map contains and orchestrates Layers
 */
 class StreetMap {
 
+  // Top layers are drawn last
   static defaultLayers = [
     { 
       name: "Buildings",
-      color_fill: "rgba(255, 255, 255, 0.73)",
-      color_line: "rgba(0, 0, 0, 1)",
+      color_fill: "rgba(66, 66, 66, 0.73)",
+      color_line: "rgba(0, 0, 0, 0.73)",
       tags: {
         building: null,
       },
@@ -352,7 +353,7 @@ class StreetMap {
   }
 
   draw({filterCB}) {
-    for (const layer of this.layers) {
+    for (const layer of this.layers.reverse()) {
       layer.draw({coords: this.coords, filterCB})
     }
   }
